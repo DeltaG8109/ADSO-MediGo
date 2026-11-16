@@ -1,7 +1,7 @@
 const TIME_ZONE_OFFSET_MINUTES = 5 * 60;
 
 function parseLocalDateTime(value) {
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})$/.exec(String(value || ""));
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(String(value || ""));
   if (!match) return null;
   const [, y, mo, d, h, mi] = match.map(Number);
   const local = new Date(Date.UTC(y, mo - 1, d, h, mi));
