@@ -7,6 +7,7 @@ const { confirmPatientEmailChange, getPatientProfile, updatePatientProfile } = r
 const { getPatientDashboard } = require("./services/dashboard");
 const { getPatientBookingPage, bookPatientAppointment } = require("./services/appointments");
 const { getPatientAppointments } = require("./services/my-appointments");
+const { cancelPatientAppointment, getPatientAppointmentCancellation } = require("./services/cancel-appointment");
 
 function createPatientRouter({ sequelize = null, models, emailSender = null } = {}) {
   const router = Router();
@@ -66,6 +67,45 @@ function createPatientRouter({ sequelize = null, models, emailSender = null } = 
           message: "No fue posible confirmar la cita en este momento. Inténtalo de nuevo."
         });
       }
+    }
+  );
+
+  router.get(
+    "/citas/:appointmentId/cancelar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await getPatientAppointmentCancellation({
+        models, userId: request.currentUser.id, appointmentId: request.params.appointmentId
+      });
+      const statusCode = result.status === "invalid" ? 422
+        : result.status === "not_found" ? 404
+          : ["error", "unavailable"].includes(result.status) ? 503 : 200;
+      return response.status(statusCode).render("patient/views/appointment-cancellation", {
+        title: "Cancelar cita", result
+      });
+    }
+  );
+
+  router.post(
+    "/citas/:appointmentId/cancelar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await cancelPatientAppointment({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId, emailSender
+      });
+      const statusCode = result.status === "cancelled" ? 200
+        : result.status === "not_cancellable" ? 409
+          : result.status === "not_found" ? 404
+            : result.status === "invalid" ? 422 : 503;
+      return response.status(statusCode).render("patient/views/appointment-cancellation", {
+        title: result.status === "cancelled" ? "Cita cancelada" : "Cancelar cita",
+        result
+      });
     }
   );
 

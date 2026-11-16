@@ -41,6 +41,16 @@ Los pacientes llegan a `/paciente`, los médicos a `/medico` y los administrador
 
 La búsqueda se limita al paciente autenticado y ordena sus citas futuras por fecha. La página usa la zona `America/Bogota` para mostrar fecha y hora. Los accesos a reserva, citas e historial enlazan con funcionalidades planificadas en historias posteriores.
 
+## Consulta y cancelación de citas del paciente — issues #18 y #19
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `GET /mis-citas` | Paciente autenticado | Lista solo las citas del paciente de la sesión. Acepta `filtro=proximas`, `filtro=anteriores` o `filtro=todas`. |
+| `GET /citas/:appointmentId/cancelar` | Paciente autenticado | Muestra los datos y las consecuencias antes de confirmar. Solo presenta la acción cuando la cita está confirmada y faltan al menos 24 horas. |
+| `POST /citas/:appointmentId/cancelar` | Paciente autenticado y CSRF | Revalida propietario, estado y plazo dentro de una transacción. Cambia a `CANCELLED`, registra actor e historial y envía una notificación por correo. |
+
+La cancelación manual se permite únicamente para citas confirmadas con al menos 24 horas antes de su inicio. Las citas en curso, atendidas, canceladas o fuera del plazo no se pueden cancelar desde el área de paciente. Al cambiar el estado, el cupo deja de estar ocupado y puede volver a ofrecerse.
+
 ## Recuperación de contraseña — issue #15
 
 | Método y ruta | Acceso | Comportamiento |

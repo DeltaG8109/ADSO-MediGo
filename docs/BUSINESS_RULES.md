@@ -24,7 +24,7 @@
 - Un paciente puede tener como máximo una cita futura en estado `Confirmed`.
 - Cita debe coincidir con disponibilidad y requerir paciente, médico y especialidad activos, correo verificado y horario libre.
 - `Confirmed` e `In Progress` ocupan el horario. `Attended`, `Cancelled` y `No Show` lo liberan.
-- Paciente puede cancelar o reprogramar hasta 24 horas antes. Administración aplica también el mínimo de 24 horas en operaciones manuales.
+- Paciente puede cancelar o reprogramar citas confirmadas únicamente con al menos 24 horas antes de su inicio. Administración aplica también el mínimo de 24 horas en operaciones manuales.
 - Médico no cancela ni reprograma. Reprogramación conserva el médico, actualiza la cita y registra historial.
 - Cancelaciones automáticas por desactivación o cambios de horario son excepciones al límite de 24 horas.
 - No registrar ausencia antes del fin del horario; las citas vencidas no se convierten automáticamente a `No Show`.
