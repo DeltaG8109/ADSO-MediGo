@@ -20,7 +20,7 @@ function createPatientRouter({ sequelize = null, models, emailSender = null } = 
       const page = await getPatientBookingPage({ models, userId: request.currentUser.id, query: request.query || {} });
       const statusCode = ["error", "unavailable"].includes(page.status) ? 503 : 200;
       return response.status(statusCode).render("patient/views/appointment-booking", {
-        title: "Reservar cita", page, booking: null, message: request.query.mensaje || null
+        title: "Reservar cita", page, booking: null, message: request.query.mensaje || (page.status === "slot_unavailable" ? "Ese horario ya no está disponible. Elige uno de los horarios actuales." : null)
       });
     }
   );
