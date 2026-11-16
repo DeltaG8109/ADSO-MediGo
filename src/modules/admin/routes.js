@@ -20,6 +20,8 @@ const {
 const { validateSpecialty } = require("./validators/specialty");
 const { getAdminSchedulePage, previewDoctorScheduleChanges, saveDoctorWeeklySchedule } = require("./services/weekly-schedules");
 const { validateWeeklySchedule } = require("./validators/weekly-schedule");
+const { getAdminScheduleExceptionsPage, previewScheduleException, saveScheduleException } = require("./services/schedule-exceptions");
+const { validateScheduleException } = require("./validators/schedule-exception");
 const WEEKDAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 function createAdminRouter({ sequelize = null, models = null, emailSender = null } = {}) {
@@ -570,6 +572,80 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
         + "&notificaciones-fallidas=" + Number(result.failedNotifications || 0));
     } catch {
       return response.status(503).send("No fue posible guardar el horario en este momento.");
+    }
+  });
+
+
+  router.get("/administrador/excepciones", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const page = await getAdminScheduleExceptionsPage({ models, doctorId: request.query.doctorId });
+    return response.status(["error", "unavailable"].includes(page.status) ? 503 : 200).render("admin/views/schedule-exceptions", {
+      title: "Excepciones de agenda", page,
+      values: { startsAt: "", endsAt: "", reason: "" }, errors: {},
+      message: request.query.mensaje || null,
+      cancelled: Number(request.query.canceladas) || 0,
+      failedNotifications: Number(request.query["notificaciones-fallidas"]) || 0
+    });
+  });
+
+  router.post("/administrador/excepciones/:doctorId/vista-previa", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const page = await getAdminScheduleExceptionsPage({ models, doctorId: request.params.doctorId });
+    if (!page.selectedDoctor) return response.status(page.status === "error" ? 503 : 404).send("No encontramos el médico solicitado.");
+    const { values, errors, isValid, data } = validateScheduleException(request.body || {});
+    if (!isValid) return response.status(422).render("admin/views/schedule-exceptions", {
+      title: "Excepciones de agenda", page, values, errors, message: null, cancelled: 0, failedNotifications: 0
+    });
+    const preview = await previewScheduleException({
+      models, doctorId: request.params.doctorId, startsAt: data.startsAt, endsAt: data.endsAt
+    });
+    if (preview.status !== "ready") return response.status(preview.status === "error" ? 503 : 404).send("No pudimos revisar las citas del médico.");
+    const formatLabel = (value) => new Intl.DateTimeFormat("es-CO", {
+      timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short"
+    }).format(value);
+    return response.render("admin/views/schedule-exception-confirmation", {
+      title: "Confirmar bloqueo de agenda", doctor: page.selectedDoctor,
+      values, reason: values.reason,
+      interval: { startsLabel: formatLabel(data.startsAt), endsLabel: formatLabel(data.endsAt) },
+      appointments: preview.appointments, previewChanged: false
+    });
+  });
+
+  router.post("/administrador/excepciones/:doctorId/guardar", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const page = await getAdminScheduleExceptionsPage({ models, doctorId: request.params.doctorId });
+    if (!page.selectedDoctor) return response.status(page.status === "error" ? 503 : 404).send("No encontramos el médico solicitado.");
+    const { values, errors, isValid, data } = validateScheduleException(request.body || {});
+    if (!isValid) return response.status(422).render("admin/views/schedule-exceptions", {
+      title: "Excepciones de agenda", page, values, errors, message: null, cancelled: 0, failedNotifications: 0
+    });
+    if (!sequelize || !models) return response.status(503).send("La gestión de excepciones no está disponible.");
+    try {
+      const result = await saveScheduleException({
+        sequelize, models, doctorId: request.params.doctorId,
+        actorUserId: request.currentUser.id, startsAt: data.startsAt, endsAt: data.endsAt,
+        reason: values.reason, confirmed: request.body?.confirmed,
+        confirmedAppointmentIds: request.body?.confirmedAppointmentIds, emailSender
+      });
+      if (result.status === "not_found") return response.status(404).send("No encontramos el médico solicitado.");
+      if (result.status === "unavailable") return response.status(503).send("La gestión de excepciones no está disponible.");
+      if (result.status === "invalid_interval") return response.status(422).send("El intervalo solicitado no es válido.");
+      if (result.status === "confirmation_required" || result.status === "preview_changed") {
+        const formatLabel = (value) => new Intl.DateTimeFormat("es-CO", {
+          timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short"
+        }).format(value);
+        return response.status(200).render("admin/views/schedule-exception-confirmation", {
+          title: "Confirmar bloqueo de agenda", doctor: page.selectedDoctor,
+          values, reason: values.reason,
+          interval: { startsLabel: formatLabel(data.startsAt), endsLabel: formatLabel(data.endsAt) },
+          appointments: result.appointments, previewChanged: result.status === "preview_changed"
+        });
+      }
+      return response.redirect(303, "/administrador/excepciones?doctorId=" + encodeURIComponent(request.params.doctorId)
+        + "&mensaje=saved&canceladas=" + Number(result.cancelled || 0)
+        + "&notificaciones-fallidas=" + Number(result.failedNotifications || 0));
+    } catch {
+      return response.status(503).send("No fue posible guardar la excepción en este momento.");
     }
   });
 
