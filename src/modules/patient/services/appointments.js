@@ -190,7 +190,8 @@ async function getPatientBookingPage({ models, userId, query = {}, now = new Dat
     status: specialtyResult.status, specialties: specialtyResult.specialties,
     doctors: [], slots: [], selectedSpecialtyId: String(query.specialtyId || ""),
     selectedDoctorId: String(query.doctorId || ""), date: String(query.date || ""),
-    time: String(query.time || ""), selectedDoctor: null, selectedSpecialty: null, patientHasUpcoming: false
+    time: String(query.time || ""), selectedDoctor: null, selectedSpecialty: null, patientHasUpcoming: false,
+    minDate: todayInBogota(now), maxDate: addDays(todayInBogota(now), BOOKING_WINDOW_DAYS)
   };
   if (page.selectedSpecialtyId) {
     const specialty = page.specialties.find((item) => String(item.id) === page.selectedSpecialtyId);
