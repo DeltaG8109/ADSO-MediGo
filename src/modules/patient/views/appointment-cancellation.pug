@@ -1,0 +1,48 @@
+extends ../../../views/shared/layout.pug
+
+block content
+  main(class="min-h-screen bg-slate-50 px-4 py-8 text-slate-800")
+    section(class="mx-auto max-w-2xl")
+      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/mis-citas") ← Volver a mis citas
+      if result.status === "cancelled"
+        section(class="mt-5 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm", role="status")
+          p(class="text-sm font-semibold uppercase tracking-wide text-emerald-700") Cita cancelada
+          h1(class="mt-1 text-2xl font-bold text-medigo-navy") Liberamos el horario
+          p(class="mt-2 text-sm text-slate-700") Tu cita de #{result.appointment.specialtyName} con Dr(a). #{result.appointment.doctorName}, el #{result.appointment.date} a las #{result.appointment.time}, quedó cancelada.
+          if result.notificationStatus === "sent"
+            p(class="mt-3 text-sm text-emerald-800") Envié una confirmación a tu correo.
+          else if result.notificationStatus === "failed"
+            p(class="mt-3 text-sm text-amber-800") La cita quedó cancelada, pero no pude enviar el correo de confirmación.
+          else
+            p(class="mt-3 text-sm text-slate-600") La cita quedó cancelada. Puedes consultar el cambio en Mis citas.
+          a(class="mt-5 inline-flex rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy", href="/mis-citas") Ir a mis citas
+      else if result.status === "ready"
+        dialog(open, aria-labelledby="cancel-title", class="relative mt-5 w-full max-w-none rounded-2xl border border-slate-200 bg-white p-6 text-slate-800 shadow-sm")
+          p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") MediGo · Área de paciente
+          h1#cancel-title(class="mt-1 text-2xl font-bold text-medigo-navy") ¿Cancelar esta cita?
+          article(class="mt-4 rounded-xl bg-sky-50 p-4")
+            h2(class="font-bold text-medigo-navy") #{result.appointment.specialtyName} · Dr(a). #{result.appointment.doctorName}
+            p(class="mt-1 text-sm capitalize text-slate-700") #{result.appointment.date} · #{result.appointment.time}
+          if result.appointment.canCancel
+            p(class="mt-4 text-sm text-slate-700") Al confirmar, la cita quedará cancelada y el horario estará disponible para otra persona. No podrás deshacer esta acción.
+            form(action="/citas/" + result.appointment.id + "/cancelar", method="post", class="mt-5 flex flex-wrap gap-3")
+              input(type="hidden", name="_csrf", value=csrfToken)
+              button(type="submit", class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-800") Sí, cancelar cita
+              a(href="/mis-citas", class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50") Mantener cita
+          else if result.appointment.status !== "CONFIRMED"
+            p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Esta cita ya no está confirmada, así que no se puede cancelar.
+            a(href="/mis-citas", class="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700") Volver a mis citas
+          else
+            p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Solo puedes cancelar una cita con al menos 24 horas de anticipación.
+            a(href="/mis-citas", class="mt-4 inline-flex rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700") Volver a mis citas
+      else if result.status === "not_cancellable"
+        section(class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-6", role="alert")
+          h1(class="text-xl font-bold text-amber-950") No se pudo cancelar la cita
+          p(class="mt-2 text-sm text-amber-900") La cita cambió de estado o ya está dentro del plazo de 24 horas. No se realizó ningún cambio.
+          a(class="mt-4 inline-flex font-semibold text-medigo-blue hover:underline", href="/mis-citas") Volver a mis citas
+      else if result.status === "not_found"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No encontramos esa cita en tu cuenta.
+      else if result.status === "invalid"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") El identificador de la cita no es válido.
+      else
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No fue posible procesar la cancelación. Inténtalo de nuevo más tarde.
