@@ -104,7 +104,7 @@ async function getAdminScheduleExceptionsPage({ models, doctorId = "" }) {
 
 async function previewScheduleException({ models, doctorId, startsAt, endsAt, now = new Date() }) {
   if (!models?.Doctor?.findByPk || !models?.Appointment?.findAll) return { status: "unavailable", appointments: [] };
-  if (!/^\\d+$/.test(String(doctorId || ""))) return { status: "not_found", appointments: [] };
+  if (!/^\d+$/.test(String(doctorId || ""))) return { status: "not_found", appointments: [] };
   try {
     const doctor = await models.Doctor.findByPk(doctorId, { attributes: ["id"] });
     if (!doctor) return { status: "not_found", appointments: [] };
@@ -127,7 +127,7 @@ async function saveScheduleException({
   if (!sequelize || !models?.Doctor || !models?.DoctorScheduleException || !models?.Appointment || !models?.AuditLog) {
     return { status: "unavailable" };
   }
-  if (!/^\\d+$/.test(String(doctorId || ""))) return { status: "not_found" };
+  if (!/^\d+$/.test(String(doctorId || ""))) return { status: "not_found" };
   if (!(startsAt instanceof Date) || !(endsAt instanceof Date) || startsAt >= endsAt) return { status: "invalid_interval" };
 
   const result = await sequelize.transaction(async (transaction) => {
