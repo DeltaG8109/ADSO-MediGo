@@ -1,5 +1,3 @@
-const { Op } = require("sequelize");
-
 const CANCELLATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 const TIME_ZONE = "America/Bogota";
 
