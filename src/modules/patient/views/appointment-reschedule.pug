@@ -1,0 +1,78 @@
+extends ../../../views/shared/layout.pug
+
+block content
+  main(class="min-h-screen bg-slate-50 px-4 py-8 text-slate-800")
+    section(class="mx-auto max-w-3xl")
+      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/mis-citas") ← Volver a mis citas
+      if result && result.status === "rescheduled"
+        section(class="mt-5 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm", role="status")
+          p(class="text-sm font-semibold uppercase tracking-wide text-emerald-700") Cita reprogramada
+          h1(class="mt-1 text-2xl font-bold text-medigo-navy") Guardé el nuevo horario
+          p(class="mt-3 text-sm text-slate-700") #{result.specialtyName} · Dr(a). #{result.doctorName}
+          p(class="mt-1 text-sm text-slate-700") Antes: #{result.previous.date} a las #{result.previous.time}
+          p(class="mt-1 text-sm font-semibold text-medigo-navy") Ahora: #{result.appointment.date} a las #{result.appointment.time}
+          if result.notificationStatus === "sent"
+            p(class="mt-3 text-sm text-emerald-800") Envié la actualización a tu correo.
+          else if result.notificationStatus === "failed"
+            p(class="mt-3 text-sm text-amber-800") La cita quedó reprogramada, pero no pude enviar el correo de confirmación.
+          else
+            p(class="mt-3 text-sm text-slate-600") Puedes consultar la actualización en Mis citas.
+          a(class="mt-5 inline-flex rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy", href="/mis-citas") Ir a mis citas
+      else if page && page.status === "not_reschedulable"
+        section(class="mt-5 rounded-2xl border border-amber-200 bg-white p-6 shadow-sm", role="alert")
+          h1(class="text-xl font-bold text-amber-950") Esta cita no se puede reprogramar
+          p(class="mt-2 text-sm text-amber-900") Solo puedes reprogramar citas confirmadas cuando faltan al menos 24 horas.
+          if page.appointment
+            p(class="mt-3 text-sm text-slate-700") #{page.appointment.specialtyName} · Dr(a). #{page.appointment.doctorName} · #{page.appointment.date} a las #{page.appointment.time}
+          a(class="mt-4 inline-flex font-semibold text-medigo-blue hover:underline", href="/mis-citas") Volver a mis citas
+      else if page && page.status === "not_found"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No encontramos esa cita en tu cuenta.
+      else if page && page.status === "invalid"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") El identificador de la cita no es válido.
+      else if page && page.status === "error"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No pudimos cargar esta cita. Inténtalo de nuevo más tarde.
+      else if page && page.status === "unavailable"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") La reprogramación no está disponible en este momento.
+      else if page && page.status === "invalid_date"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Selecciona una fecha dentro de los próximos 30 días.
+      else if page && page.status === "ready"
+        if message
+          p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert")= message
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
+          p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") Médico y especialidad se mantienen
+          h1(class="mt-1 text-2xl font-bold text-medigo-navy") Reprogramar cita
+          h2(class="mt-4 font-bold text-medigo-navy") #{page.appointment.specialtyName} · Dr(a). #{page.appointment.doctorName}
+          p(class="mt-1 text-sm capitalize text-slate-600") Cita actual: #{page.appointment.date} a las #{page.appointment.time}
+          form(action="/citas/" + page.appointment.id + "/reprogramar", method="get", class="mt-5 flex flex-wrap items-end gap-3")
+            div(class="min-w-56 flex-1")
+              label(class="mb-1 block text-sm font-semibold", for="date") Nueva fecha
+              input#date(class="w-full rounded-lg border border-slate-300 px-3 py-2", type="date", name="date", min=page.minDate, max=page.maxDate, value=page.date, required)
+            button(type="submit", class="rounded-lg bg-medigo-blue px-4 py-2 font-semibold text-white hover:bg-medigo-navy") Buscar horarios
+          if page.date && page.status === "slot_unavailable"
+            p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Ese horario ya no está disponible. Selecciona una de las opciones actuales.
+          else if page.date && page.slots.length
+            if page.selectedSlot
+              section(class="mt-5 rounded-xl bg-sky-50 p-4")
+                h2(class="font-bold text-medigo-navy") Revisa el cambio
+                p(class="mt-2 text-sm text-slate-700") Fecha actual: #{page.appointment.date} · #{page.appointment.time}
+                p(class="mt-1 text-sm font-semibold text-medigo-navy") Nueva fecha: #{page.date} · #{page.selectedSlot.label}
+                p(class="mt-2 text-xs text-slate-600") La cita conservará el médico y la especialidad. Solo se actualizará si el horario sigue disponible al confirmar.
+                form(action="/citas/" + page.appointment.id + "/reprogramar", method="post", class="mt-4 flex flex-wrap gap-3")
+                  input(type="hidden", name="_csrf", value=csrfToken)
+                  input(type="hidden", name="date", value=page.date)
+                  input(type="hidden", name="time", value=page.selectedSlot.time)
+                  button(type="submit", class="rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy") Confirmar nuevo horario
+                  a(href="/citas/" + page.appointment.id + "/reprogramar?date=" + page.date, class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700") Elegir otro horario
+            else
+              form(action="/citas/" + page.appointment.id + "/reprogramar", method="get", class="mt-4")
+                input(type="hidden", name="date", value=page.date)
+                fieldset
+                  legend(class="mb-3 text-sm font-semibold") Horarios disponibles · 30 minutos
+                  div(class="grid grid-cols-2 gap-2 sm:grid-cols-4")
+                    each slot in page.slots
+                      label(class="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-center text-sm hover:border-medigo-blue")
+                        input(class="sr-only", type="radio", name="time", value=slot.time, required)
+                        span= slot.label
+                button(type="submit", class="mt-4 rounded-lg bg-medigo-blue px-4 py-2.5 font-semibold text-white hover:bg-medigo-navy") Revisar horario
+          else if page.date
+            p(class="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600") No hay horarios disponibles para esta fecha. Prueba con otro día.
