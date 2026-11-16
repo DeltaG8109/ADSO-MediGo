@@ -8,6 +8,7 @@ const { getPatientDashboard } = require("./services/dashboard");
 const { getPatientBookingPage, bookPatientAppointment } = require("./services/appointments");
 const { getPatientAppointments } = require("./services/my-appointments");
 const { cancelPatientAppointment, getPatientAppointmentCancellation } = require("./services/cancel-appointment");
+const { getPatientReschedulePage, reschedulePatientAppointment } = require("./services/reschedule-appointment");
 
 function createPatientRouter({ sequelize = null, models, emailSender = null } = {}) {
   const router = Router();
@@ -67,6 +68,64 @@ function createPatientRouter({ sequelize = null, models, emailSender = null } = 
           message: "No fue posible confirmar la cita en este momento. Inténtalo de nuevo."
         });
       }
+    }
+  );
+
+  router.get(
+    "/citas/:appointmentId/reprogramar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const page = await getPatientReschedulePage({
+        models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId, query: request.query || {}
+      });
+      const statusCode = ["invalid", "invalid_date"].includes(page.status) ? 422
+        : page.status === "not_found" ? 404
+          : ["error", "unavailable"].includes(page.status) ? 503
+            : page.status === "slot_unavailable" ? 409 : 200;
+      return response.status(statusCode).render("patient/views/appointment-reschedule", {
+        title: "Reprogramar cita", page, result: null, message: null
+      });
+    }
+  );
+
+  router.post(
+    "/citas/:appointmentId/reprogramar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await reschedulePatientAppointment({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId,
+        date: request.body?.date, time: request.body?.time, emailSender
+      });
+      if (result.status === "rescheduled") {
+        return response.status(200).render("patient/views/appointment-reschedule", {
+          title: "Cita reprogramada", page: null, result, message: null
+        });
+      }
+      const page = await getPatientReschedulePage({
+        models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId,
+        query: { date: request.body?.date || "" }
+      });
+      const statusCode = ["invalid", "invalid_date"].includes(result.status) ? 422
+        : result.status === "not_found" ? 404
+          : result.status === "not_reschedulable" || result.status === "no_change" ? 409
+            : ["slot_unavailable", "not_found"].includes(result.status) ? 409 : 503;
+      const message = result.status === "slot_unavailable"
+        ? "Ese horario acaba de ocuparse. Elige uno de los horarios disponibles."
+        : result.status === "no_change"
+          ? "Elige un horario distinto al de tu cita actual."
+          : result.status === "not_reschedulable"
+            ? "La cita cambió o ya está dentro del plazo de 24 horas. No hicimos cambios."
+            : "No fue posible reprogramar la cita. Revisa los datos e inténtalo de nuevo.";
+      return response.status(statusCode).render("patient/views/appointment-reschedule", {
+        title: "Reprogramar cita", page, result, message
+      });
     }
   );
 
