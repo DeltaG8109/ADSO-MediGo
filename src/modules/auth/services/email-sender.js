@@ -112,9 +112,9 @@ function createEmailSender(environment = process.env) {
       await transporter.sendMail({
         from: environment.SMTP_FROM,
         to,
-        subject: "Actualización de una cita en MediGo",
-        text: `Hola ${firstName || ""}. Actualizamos la disponibilidad del médico y tu cita de ${appointmentDate || ""} a las ${appointmentTime || ""} fue cancelada. Ingresa a MediGo para elegir otro horario.`,
-        html: `<p>Hola ${safeName},</p><p>Actualizamos la disponibilidad del médico y tu cita del ${safeDate} a las ${safeTime} fue cancelada.</p><p>Ingresa a MediGo para elegir otro horario.</p>`
+        subject: "Tu cita fue cancelada en MediGo",
+        text: `Hola ${firstName || ""}. Tu cita del ${appointmentDate || ""} a las ${appointmentTime || ""} fue cancelada. El horario quedó disponible. Si necesitas otra cita, puedes elegir un nuevo horario desde MediGo.`,
+        html: `<p>Hola ${safeName},</p><p>Tu cita del ${safeDate} a las ${safeTime} fue cancelada y el horario quedó disponible.</p><p>Si necesitas otra cita, puedes elegir un nuevo horario desde MediGo.</p>`
       });
     },
     async sendAppointmentBookingNotification({ to, firstName, doctorName, specialtyName, appointmentDate, appointmentTime }) {
