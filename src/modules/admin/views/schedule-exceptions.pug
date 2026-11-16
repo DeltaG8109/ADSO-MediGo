@@ -16,7 +16,7 @@ block content
         p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No pudimos cargar las excepciones.
       else if page.status === "unavailable"
         p(class="mt-4 rounded-xl bg-sky-50 p-4 text-sm text-sky-900", role="status") La gestión de excepciones todavía no está disponible. Ejecuta las migraciones pendientes.
-      form(class="mt-5 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4", action="/administrador/excepciones-agenda", method="get")
+      form(class="mt-5 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4", action="/administrador/excepciones", method="get")
         div(class="min-w-64 flex-1")
           label(class="mb-1 block text-sm font-semibold", for="doctorId") Médico
           select#doctorId(class="w-full rounded-lg border border-slate-300 px-3 py-2", name="doctorId", required)
@@ -29,7 +29,7 @@ block content
           article(class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
             h2(class="text-lg font-bold text-medigo-navy") Bloquear disponibilidad
             p(class="mt-1 text-sm text-slate-600") El intervalo puede durar unas horas o varios días.
-            form(class="mt-4 space-y-4", action="/administrador/excepciones-agenda/" + page.selectedDoctor.id + "/vista-previa", method="post")
+            form(class="mt-4 space-y-4", action="/administrador/excepciones/" + page.selectedDoctor.id + "/vista-previa", method="post")
               input(type="hidden", name="_csrf", value=csrfToken)
               div
                 label(class="mb-1 block text-sm font-semibold", for="startsAt") Inicio
