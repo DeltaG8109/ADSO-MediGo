@@ -1,0 +1,53 @@
+extends ../../../views/shared/layout.pug
+
+block content
+  main(class="min-h-screen bg-slate-50 px-4 py-8 text-slate-800")
+    section(class="mx-auto max-w-5xl")
+      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/paciente") ← Volver a mi espacio
+      header(class="mt-4")
+        p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") MediGo · Área de paciente
+        h1(class="mt-1 text-2xl font-bold text-medigo-navy sm:text-3xl") Mis citas
+        p(class="mt-1 text-sm text-slate-600") Consulta las fechas, el médico y el estado de tus citas.
+      nav(aria-label="Filtrar citas", class="mt-5 flex flex-wrap gap-2")
+        a(
+          href="/mis-citas?filtro=proximas",
+          aria-current=result.filter === "proximas" ? "page" : undefined,
+          class=result.filter === "proximas" ? "rounded-full bg-medigo-blue px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-medigo-blue"
+        ) Próximas
+        a(
+          href="/mis-citas?filtro=anteriores",
+          aria-current=result.filter === "anteriores" ? "page" : undefined,
+          class=result.filter === "anteriores" ? "rounded-full bg-medigo-blue px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-medigo-blue"
+        ) Anteriores
+        a(
+          href="/mis-citas?filtro=todas",
+          aria-current=result.filter === "todas" ? "page" : undefined,
+          class=result.filter === "todas" ? "rounded-full bg-medigo-blue px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-medigo-blue"
+        ) Todas
+
+      if result.status === "error" || result.status === "unavailable"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No pudimos cargar tus citas. Inténtalo de nuevo más tarde.
+      else if result.status === "not_found"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No encontramos tu perfil de paciente.
+      else if result.status === "invalid"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") El filtro seleccionado no es válido.
+      else if result.appointments.length
+        section(aria-label="Resultados de mis citas", class="mt-5 space-y-3")
+          each appointment in result.appointments
+            article(class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between")
+              div
+                p(class="text-sm font-semibold capitalize text-medigo-blue") #{appointment.date} · #{appointment.time}
+                h2(class="mt-1 text-lg font-bold text-medigo-navy") #{appointment.specialtyName}
+                p(class="mt-1 text-sm text-slate-600") Dr(a). #{appointment.doctorName}
+              div(class="mt-4 flex flex-col items-start gap-2 sm:mt-0 sm:items-end")
+                span(class="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-900") #{appointment.status}
+                if appointment.canCancel
+                  p(class="text-xs text-slate-600") Puedes gestionar cambios hasta 24 horas antes de la cita.
+                else if appointment.status === "Confirmada"
+                  p(class="text-xs text-slate-600") Los cambios deben solicitarse con al menos 24 horas de anticipación.
+      else
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm")
+          h2(class="text-lg font-bold text-medigo-navy") No hay citas en esta lista
+          p(class="mt-1 text-sm text-slate-600") Cuando tengas citas, aparecerán aquí con sus datos y estado.
+          if result.filter !== "anteriores"
+            a(class="mt-4 inline-flex rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy", href="/citas/reservar") Reservar una cita
