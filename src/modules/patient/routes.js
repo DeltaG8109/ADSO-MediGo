@@ -6,6 +6,7 @@ const { changePatientPassword } = require("./services/change-password");
 const { confirmPatientEmailChange, getPatientProfile, updatePatientProfile } = require("./services/profile");
 const { getPatientDashboard } = require("./services/dashboard");
 const { getPatientBookingPage, bookPatientAppointment } = require("./services/appointments");
+const { getPatientAppointments } = require("./services/my-appointments");
 
 function createPatientRouter({ sequelize = null, models, emailSender = null } = {}) {
   const router = Router();
@@ -65,6 +66,27 @@ function createPatientRouter({ sequelize = null, models, emailSender = null } = 
           message: "No fue posible confirmar la cita en este momento. Inténtalo de nuevo."
         });
       }
+    }
+  );
+
+  router.get(
+    "/mis-citas",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await getPatientAppointments({
+        models,
+        userId: request.currentUser.id,
+        filter: request.query.filtro || "proximas"
+      });
+      const statusCode = result.status === "invalid" ? 422
+        : result.status === "not_found" ? 404
+          : ["error", "unavailable"].includes(result.status) ? 503 : 200;
+      return response.status(statusCode).render("patient/views/my-appointments", {
+        title: "Mis citas",
+        result
+      });
     }
   );
 
