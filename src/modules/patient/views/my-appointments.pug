@@ -50,6 +50,11 @@ block content
                     href="/citas/" + appointment.id + "/cancelar",
                     class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50"
                   ) Cancelar cita
+                if appointment.canReschedule
+                  a(
+                    href="/citas/" + appointment.id + "/reprogramar",
+                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-medigo-blue hover:bg-sky-50"
+                  ) Reprogramar
       else
         section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm")
           h2(class="text-lg font-bold text-medigo-navy") No hay citas en esta lista
