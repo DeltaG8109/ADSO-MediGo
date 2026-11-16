@@ -76,7 +76,7 @@ describe("patient appointment rescheduling", () => {
     expect(models.Appointment.findOne).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "31", patientId: 81 }
     }));
-    expect(models.Doctor.findByPk).toHaveBeenCalledWith("9", expect.any(Object));
+    expect(models.Doctor.findByPk).toHaveBeenCalledWith(9, expect.any(Object));
   });
 
   test("revalidates availability in a transaction and records the change and actor", async () => {
