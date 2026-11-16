@@ -5,9 +5,68 @@ const { validatePatientPasswordChange } = require("./validators/change-password"
 const { changePatientPassword } = require("./services/change-password");
 const { confirmPatientEmailChange, getPatientProfile, updatePatientProfile } = require("./services/profile");
 const { getPatientDashboard } = require("./services/dashboard");
+const { getPatientBookingPage, bookPatientAppointment } = require("./services/appointments");
 
 function createPatientRouter({ sequelize = null, models, emailSender = null } = {}) {
   const router = Router();
+
+
+  router.get(
+    "/citas/reservar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const page = await getPatientBookingPage({ models, userId: request.currentUser.id, query: request.query || {} });
+      const statusCode = ["error", "unavailable"].includes(page.status) ? 503 : 200;
+      return response.status(statusCode).render("patient/views/appointment-booking", {
+        title: "Reservar cita", page, booking: null, message: request.query.mensaje || (page.status === "slot_unavailable" ? "Ese horario ya no está disponible. Elige uno de los horarios actuales." : null)
+      });
+    }
+  );
+
+  router.post(
+    "/citas/reservar/confirmar",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      if (!sequelize || !models) return response.status(503).send("La reserva de citas no está disponible.");
+      const query = request.body || {};
+      const page = await getPatientBookingPage({ models, userId: request.currentUser.id, query });
+      if (!page.selectedSlot) return response.status(409).render("patient/views/appointment-booking", {
+        title: "Horario no disponible", page, booking: null,
+        message: "El horario cambió o ya no está disponible. Revisa las opciones actuales."
+      });
+      try {
+        const result = await bookPatientAppointment({
+          sequelize, models, userId: request.currentUser.id,
+          specialtyId: query.specialtyId, doctorId: query.doctorId,
+          date: query.date, time: query.time, emailSender
+        });
+        if (result.status === "booked") return response.status(200).render("patient/views/appointment-booking", {
+          title: "Cita confirmada", page, booking: result,
+          message: result.notificationStatus === "sent"
+            ? "Tu cita quedó confirmada y enviamos el detalle a tu correo."
+            : "Tu cita quedó confirmada, pero no pudimos enviar el correo. Puedes consultar los datos aquí."
+        });
+        const message = result.status === "patient_has_upcoming"
+          ? "Ya tienes una cita futura confirmada. Solo puedes reservar una a la vez."
+          : result.status === "slot_unavailable"
+            ? "Ese horario acaba de ocuparse. Revisa las opciones disponibles."
+            : "No pudimos confirmar ese horario. Selecciona nuevamente una opción disponible.";
+        const refreshed = await getPatientBookingPage({ models, userId: request.currentUser.id, query });
+        return response.status(409).render("patient/views/appointment-booking", {
+          title: "No se pudo completar la reserva", page: refreshed, booking: null, message
+        });
+      } catch {
+        return response.status(503).render("patient/views/appointment-booking", {
+          title: "Reserva no disponible", page, booking: null,
+          message: "No fue posible confirmar la cita en este momento. Inténtalo de nuevo."
+        });
+      }
+    }
+  );
 
   router.get(
     "/paciente",
