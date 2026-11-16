@@ -193,6 +193,19 @@ async function getPatientBookingPage({ models, userId, query = {}, now = new Dat
     time: String(query.time || ""), selectedDoctor: null, selectedSpecialty: null, patientHasUpcoming: false,
     minDate: todayInBogota(now), maxDate: addDays(todayInBogota(now), BOOKING_WINDOW_DAYS)
   };
+  if (models?.Patient?.findOne && models?.Appointment?.findOne) {
+    try {
+      const patient = plain(await models.Patient.findOne({ where: { userId } }));
+      if (!patient) return { ...page, status: "error" };
+      const upcoming = await models.Appointment.findOne({
+        where: { patientId: patient.id, status: "CONFIRMED", startsAt: { [Op.gte]: now } }
+      });
+      page.patientHasUpcoming = Boolean(upcoming);
+    } catch {
+      return { ...page, status: "error" };
+    }
+  }
+  if (page.patientHasUpcoming) return page;
   if (page.selectedSpecialtyId) {
     const specialty = page.specialties.find((item) => String(item.id) === page.selectedSpecialtyId);
     if (!specialty) { page.status = "invalid"; return page; }
