@@ -35,7 +35,7 @@ block content
         p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") La reprogramación no está disponible en este momento.
       else if page && page.status === "invalid_date"
         p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Selecciona una fecha dentro de los próximos 30 días.
-      else if page && page.status === "ready"
+      else if page && ["ready", "slot_unavailable"].includes(page.status)
         if message
           p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert")= message
         section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
@@ -50,7 +50,7 @@ block content
             button(type="submit", class="rounded-lg bg-medigo-blue px-4 py-2 font-semibold text-white hover:bg-medigo-navy") Buscar horarios
           if page.date && page.status === "slot_unavailable"
             p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") Ese horario ya no está disponible. Selecciona una de las opciones actuales.
-          else if page.date && page.slots.length
+          if page.date && page.slots.length
             if page.selectedSlot
               section(class="mt-5 rounded-xl bg-sky-50 p-4")
                 h2(class="font-bold text-medigo-navy") Revisa el cambio
