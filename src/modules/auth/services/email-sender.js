@@ -116,6 +116,20 @@ function createEmailSender(environment = process.env) {
         text: `Hola ${firstName || ""}. Actualizamos la disponibilidad del médico y tu cita de ${appointmentDate || ""} a las ${appointmentTime || ""} fue cancelada. Ingresa a MediGo para elegir otro horario.`,
         html: `<p>Hola ${safeName},</p><p>Actualizamos la disponibilidad del médico y tu cita del ${safeDate} a las ${safeTime} fue cancelada.</p><p>Ingresa a MediGo para elegir otro horario.</p>`
       });
+    },
+    async sendAppointmentBookingNotification({ to, firstName, doctorName, specialtyName, appointmentDate, appointmentTime }) {
+      const safeName = escapeHtml(firstName || "paciente");
+      const safeDoctor = escapeHtml(doctorName || "médico asignado");
+      const safeSpecialty = escapeHtml(specialtyName || "especialidad asignada");
+      const safeDate = escapeHtml(appointmentDate || "");
+      const safeTime = escapeHtml(appointmentTime || "");
+      await transporter.sendMail({
+        from: environment.SMTP_FROM,
+        to,
+        subject: "Tu cita está confirmada en MediGo",
+        text: `Hola ${firstName || ""}. Tu cita de ${specialtyName || "salud"} con ${doctorName || "tu médico"} quedó confirmada para el ${appointmentDate || ""} a las ${appointmentTime || ""}.`,
+        html: `<p>Hola ${safeName},</p><p>Tu cita de ${safeSpecialty} con ${safeDoctor} quedó confirmada para el ${safeDate} a las ${safeTime}.</p><p>Puedes consultar los detalles en tu espacio de paciente de MediGo.</p>`
+      });
     }
   };
 }
