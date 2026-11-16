@@ -117,6 +117,25 @@ function createEmailSender(environment = process.env) {
         html: `<p>Hola ${safeName},</p><p>Tu cita del ${safeDate} a las ${safeTime} fue cancelada y el horario quedó disponible.</p><p>Si necesitas otra cita, puedes elegir un nuevo horario desde MediGo.</p>`
       });
     },
+    async sendAppointmentRescheduleNotification({
+      to, firstName, doctorName, specialtyName, previousDate, previousTime, appointmentDate, appointmentTime
+    }) {
+      const safeName = escapeHtml(firstName || "paciente");
+      const safeDoctor = escapeHtml(doctorName || "tu médico");
+      const safeSpecialty = escapeHtml(specialtyName || "tu cita");
+      const safePreviousDate = escapeHtml(previousDate || "");
+      const safePreviousTime = escapeHtml(previousTime || "");
+      const safeDate = escapeHtml(appointmentDate || "");
+      const safeTime = escapeHtml(appointmentTime || "");
+      await transporter.sendMail({
+        from: environment.SMTP_FROM,
+        to,
+        subject: "Tu cita fue reprogramada en MediGo",
+        text: `Hola ${firstName || ""}. Reprogramamos tu cita de ${specialtyName || "salud"} con ${doctorName || "tu médico"}. La fecha anterior era ${previousDate || ""} a las ${previousTime || ""} y la nueva fecha es ${appointmentDate || ""} a las ${appointmentTime || ""}.`,
+        html: `<p>Hola ${safeName},</p><p>Reprogramamos tu cita de ${safeSpecialty} con ${safeDoctor}.</p><p>Fecha anterior: ${safePreviousDate} a las ${safePreviousTime}.</p><p>Nueva fecha: ${safeDate} a las ${safeTime}.</p><p>Puedes consultar los detalles en tu espacio de paciente de MediGo.</p>`
+      });
+    },
+
     async sendAppointmentBookingNotification({ to, firstName, doctorName, specialtyName, appointmentDate, appointmentTime }) {
       const safeName = escapeHtml(firstName || "paciente");
       const safeDoctor = escapeHtml(doctorName || "médico asignado");
