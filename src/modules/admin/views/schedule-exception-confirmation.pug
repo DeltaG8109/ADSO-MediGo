@@ -3,7 +3,7 @@ extends ../../../views/shared/layout.pug
 block content
   main(class="min-h-screen bg-slate-100 px-4 py-8 text-slate-800")
     section(class="mx-auto max-w-4xl")
-      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/administrador/excepciones-agenda?doctorId=" + doctor.id) ← Volver a excepciones
+      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/administrador/excepciones?doctorId=" + doctor.id) ← Volver a excepciones
       header(class="mt-4")
         p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") MediGo · Administración
         h1(class="mt-1 text-2xl font-bold text-medigo-navy") Confirmar bloqueo de agenda
@@ -24,7 +24,7 @@ block content
           p(class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-900") Al confirmar, cancelaré estas citas y avisaré a los pacientes por correo.
         else
           p(class="mt-3 rounded-lg bg-emerald-50 p-4 text-sm text-emerald-900") No hay citas futuras confirmadas que se crucen con este intervalo.
-        form(class="mt-6 flex flex-wrap gap-3", action="/administrador/excepciones-agenda/" + doctor.id + "/guardar", method="post")
+        form(class="mt-6 flex flex-wrap gap-3", action="/administrador/excepciones/" + doctor.id + "/guardar", method="post")
           input(type="hidden", name="_csrf", value=csrfToken)
           input(type="hidden", name="startsAt", value=values.startsAt)
           input(type="hidden", name="endsAt", value=values.endsAt)
@@ -33,4 +33,4 @@ block content
           each appointment in appointments
             input(type="hidden", name="confirmedAppointmentIds", value=appointment.id)
           button(class="rounded-lg bg-medigo-blue px-5 py-3 font-semibold text-white", type="submit") Confirmar y guardar bloqueo
-          a(class="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700", href="/administrador/excepciones-agenda?doctorId=" + doctor.id) Cancelar
+          a(class="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700", href="/administrador/excepciones?doctorId=" + doctor.id) Cancelar
