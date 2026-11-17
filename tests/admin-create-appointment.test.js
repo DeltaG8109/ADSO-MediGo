@@ -1,3 +1,5 @@
+const path = require("node:path");
+const pug = require("pug");
 const { Op } = require("sequelize");
 const {
   createAdminAppointment,
@@ -51,6 +53,10 @@ function transactionHarness() {
 }
 
 describe("administrator appointment creation", () => {
+  test("compiles the creation screen", () => {
+    expect(() => pug.compileFile(path.join(__dirname, "../src/modules/admin/views/create-appointment.pug"))).not.toThrow();
+  });
+
   test("shows eligible patients and available slots from the selected doctor", async () => {
     const models = modelsFor();
     const page = await getAdminAppointmentBookingPage({
