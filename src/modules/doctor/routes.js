@@ -9,6 +9,7 @@ const { getDoctorPatient, getDoctorPatients } = require("./services/patients");
 const { getDoctorProfile, updateDoctorProfile } = require("./services/profile");
 const { getDoctorSchedule } = require("./services/schedule");
 const { startDoctorConsultation } = require("./services/start-consultation");
+const { appendConsultationAddendum, saveConsultationNotes } = require("./services/consultation-notes");
 const { validateDoctorProfile } = require("./validators/profile");
 
 function createDoctorRouter({ sequelize = null, models = null } = {}) {
@@ -187,13 +188,23 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
       });
       const statusCode = result.status === "ready" ? 200
         : result.status === "not_found" ? 404 : 503;
-      const message = request.query.mensaje === "consulta-iniciada"
-        ? "Iniciaste la atención. El registro quedó guardado."
-        : result.status === "not_found"
-        ? "No encontramos esta cita asignada."
-        : result.status === "unavailable" || result.status === "error"
-          ? "No fue posible cargar la cita en este momento."
-          : null;
+      const messages = {
+        "consulta-iniciada": "Iniciaste la atención. El registro quedó guardado.",
+        "observaciones-guardadas": "Guardé las observaciones de la consulta.",
+        "observaciones-invalidas": "Las observaciones no pueden superar los 10.000 caracteres.",
+        "observaciones-inmutables": "Las observaciones originales ya no se pueden modificar.",
+        "aclaracion-guardada": "Agregué la aclaración al registro de la consulta.",
+        "aclaracion-invalida": "Escribe una aclaración de hasta 10.000 caracteres.",
+        "consulta-no-finalizada": "Solo puedes agregar aclaraciones después de finalizar la consulta.",
+        "consulta-no-encontrada": "No encontramos esta consulta asignada.",
+        "consulta-no-disponible": "El registro de consulta no está disponible en este momento.",
+        "consulta-error": "No fue posible guardar el cambio. Inténtalo de nuevo."
+      };
+      const message = messages[request.query.mensaje] || (
+        result.status === "not_found" ? "No encontramos esta cita asignada."
+          : result.status === "unavailable" || result.status === "error"
+            ? "No fue posible cargar la cita en este momento." : null
+      );
       return response.status(statusCode).render("doctor/views/appointment-detail", {
         title: result.status === "ready" ? "Detalle de cita" : "Cita no disponible",
         appointment: result.appointment || null,
@@ -239,6 +250,38 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
         appointment: detail.appointment || null,
         message: messages[result.status] || messages.error
       });
+    }
+  );
+
+  router.post(
+    "/medico/consultas/:appointmentId/observaciones",
+    requireAuthenticatedUser({ models }), requireRole("DOCTOR"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await saveConsultationNotes({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId, notes: request.body?.notes
+      });
+      const key = { saved: "observaciones-guardadas", invalid: "observaciones-invalidas",
+        immutable: "observaciones-inmutables", not_found: "consulta-no-encontrada",
+        unavailable: "consulta-no-disponible", error: "consulta-error" }[result.status] || "consulta-error";
+      return response.redirect(303, "/medico/citas/" + encodeURIComponent(request.params.appointmentId) + "?mensaje=" + key);
+    }
+  );
+
+  router.post(
+    "/medico/consultas/:appointmentId/aclaraciones",
+    requireAuthenticatedUser({ models }), requireRole("DOCTOR"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await appendConsultationAddendum({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId, content: request.body?.content
+      });
+      const key = { added: "aclaracion-guardada", invalid: "aclaracion-invalida",
+        not_completed: "consulta-no-finalizada", not_found: "consulta-no-encontrada",
+        unavailable: "consulta-no-disponible", error: "consulta-error" }[result.status] || "consulta-error";
+      return response.redirect(303, "/medico/citas/" + encodeURIComponent(request.params.appointmentId) + "?mensaje=" + key);
     }
   );
 

@@ -1,3 +1,9 @@
+## 2026-11-17 — Observaciones y aclaraciones de consulta (US-DOC-05)
+
+- Permití guardar y editar observaciones mientras la consulta está en curso.
+- Dejé el registro original de solo lectura al finalizar y añadí aclaraciones independientes con autor y fecha.
+- Añadí la migración, las pruebas y la documentación de las nuevas rutas.
+
 ## 2026-11-12 — Activación y desactivación de cuentas (US-ADM-12)
 
 - Añadí confirmación con el número de citas futuras confirmadas que se cancelarían.

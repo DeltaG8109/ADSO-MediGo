@@ -24,7 +24,7 @@ function parseBogotaDate(dateText) {
   return new Date(Date.UTC(year, month - 1, day, 12));
 }
 
-function appointmentIncludes(models) {
+function appointmentIncludes(models, includeClinicalDetails = false) {
   const include = [];
   if (models.Patient) {
     include.push({
@@ -36,7 +36,27 @@ function appointmentIncludes(models) {
     });
   }
   if (models.Specialty) include.push({ model: models.Specialty, as: "specialty", attributes: ["name"] });
-  if (models.Consultation) include.push({ model: models.Consultation, as: "consultation", attributes: ["status", "startedAt"] });
+  if (models.Consultation) {
+    const consultationInclude = {
+      model: models.Consultation,
+      as: "consultation",
+      attributes: includeClinicalDetails ? ["id", "status", "startedAt", "completedAt", "notes"] : ["status", "startedAt"]
+    };
+    if (includeClinicalDetails && models.ConsultationAddendum) {
+      consultationInclude.include = [{
+        model: models.ConsultationAddendum,
+        as: "addenda",
+        attributes: ["id", "doctorId", "content", "createdAt"],
+        include: models.Doctor ? [{
+          model: models.Doctor,
+          as: "doctor",
+          attributes: ["id"],
+          include: models.User ? [{ model: models.User, as: "user", attributes: ["firstName", "lastName"] }] : []
+        }] : []
+      }];
+    }
+    include.push(consultationInclude);
+  }
   return include;
 }
 
@@ -49,6 +69,19 @@ function presentAppointment(record, now) {
   const endsAt = new Date(appointment.endsAt);
   const consultation = plain(appointment.consultation);
   const consultationStartedAt = consultation?.startedAt ? new Date(consultation.startedAt) : null;
+  const consultationCompletedAt = consultation?.completedAt ? new Date(consultation.completedAt) : null;
+  const consultationAddenda = (consultation?.addenda || []).map(plain).map((addendum) => {
+    const author = plain(plain(addendum.doctor)?.user);
+    const createdAt = new Date(addendum.createdAt);
+    return {
+      id: addendum.id,
+      content: addendum.content,
+      authorName: [author?.firstName, author?.lastName].filter(Boolean).join(" ") || "Médico asignado",
+      createdAtLabel: Number.isFinite(createdAt.getTime())
+        ? new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short" }).format(createdAt)
+        : "Fecha no disponible"
+    };
+  });
   const canStart = appointment.status === "CONFIRMED"
     && Number.isFinite(startsAt.getTime())
     && Number.isFinite(endsAt.getTime())
@@ -71,6 +104,12 @@ function presentAppointment(record, now) {
     consultationStartedAtLabel: consultationStartedAt && Number.isFinite(consultationStartedAt.getTime())
       ? new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short" }).format(consultationStartedAt)
       : null,
+    consultationStatus: consultation?.status || null,
+    consultationNotes: consultation?.notes || "",
+    consultationCompletedAtLabel: consultationCompletedAt && Number.isFinite(consultationCompletedAt.getTime())
+      ? new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short" }).format(consultationCompletedAt)
+      : null,
+    consultationAddenda,
     canStart
   };
 }
@@ -126,7 +165,7 @@ async function getDoctorAppointment({ models, userId, appointmentId, now = new D
     if (!doctorId) return { status: "not_found" };
     const record = await models.Appointment.findOne({
       where: { id: appointmentId, doctorId },
-      include: appointmentIncludes(models)
+      include: appointmentIncludes(models, true)
     });
     if (!record) return { status: "not_found" };
     return { status: "ready", appointment: presentAppointment(record, now) };
