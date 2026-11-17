@@ -1,3 +1,10 @@
+## 2026-11-17 — Vincular WhatsApp con Meta Cloud API (US-PAT-13)
+
+- Añadí el formulario para dar consentimiento, verificar un número internacional y desvincularlo con confirmación.
+- Envié códigos de seis dígitos con Meta Cloud API; vencen en cinco minutos y permiten hasta cinco intentos.
+- Guardé el hash del código, hice único el número y documenté la configuración necesaria sin simular entregas.
+- Añadí pruebas para la verificación, los límites, la desvinculación y el adaptador de Meta.
+
 ## 2026-11-17 — Finalizar consulta médica (US-DOC-06)
 
 - Añadí la acción para finalizar una consulta desde el detalle de la cita, aunque no tenga observaciones.
