@@ -102,7 +102,7 @@ describe("administrator appointment changes", () => {
     const route = router.stack.find((layer) => layer.route?.path === "/administrador/citas/:appointmentId/cancelar/confirmar");
     expect(route).toBeDefined();
     const requireAdminRole = route.route.stack[1].handle;
-    const response = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+    const response = { status: jest.fn().mockReturnThis(), render: jest.fn() };
     requireAdminRole({ currentUser: { role: "DOCTOR" } }, response, () => {
       throw new Error("Un médico no debe continuar.");
     });
