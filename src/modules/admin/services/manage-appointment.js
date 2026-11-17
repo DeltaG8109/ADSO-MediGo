@@ -157,6 +157,10 @@ async function changeAppointment({
       }
 
       if (startsAt.getTime() === oldStartsAt.getTime()) return { status: "no_change" };
+      const doctorLock = await models.Doctor.findByPk(item.doctorId, {
+        transaction, lock: transaction.LOCK.UPDATE
+      });
+      if (!doctorLock) return { status: "not_found" };
       const availability = await getAvailableSlots({
         models, doctorId: item.doctorId, date, now, transaction
       });
