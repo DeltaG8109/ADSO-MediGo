@@ -41,17 +41,18 @@ Los pacientes llegan a `/paciente`, los médicos a `/medico` y los administrador
 
 La búsqueda se limita al paciente autenticado y ordena sus citas futuras por fecha. La página usa la zona `America/Bogota` para mostrar fecha y hora. Los accesos a reserva, citas e historial enlazan con funcionalidades planificadas en historias posteriores.
 
-## Consulta y cancelación de citas del paciente — issues #18 y #19
+## Consulta, historial y cambios de citas del paciente — issues #18, #19 y #21
 
 | Método y ruta | Acceso | Comportamiento |
 |---|---|---|
+| `GET /historial` | Paciente autenticado | Lleva al historial de citas anteriores del paciente de la sesión. |
 | `GET /mis-citas` | Paciente autenticado | Lista solo las citas del paciente de la sesión. Acepta `filtro=proximas`, `filtro=anteriores` o `filtro=todas`. |
 | `GET /citas/:appointmentId/cancelar` | Paciente autenticado | Muestra los datos y las consecuencias antes de confirmar. Solo presenta la acción cuando la cita está confirmada y faltan al menos 24 horas. |
 | `POST /citas/:appointmentId/cancelar` | Paciente autenticado y CSRF | Revalida propietario, estado y plazo dentro de una transacción. Cambia a `CANCELLED`, registra actor e historial y envía una notificación por correo. |
 | `GET /citas/:appointmentId/reprogramar` | Paciente autenticado | Muestra el médico y la especialidad actuales y permite consultar horarios disponibles para una fecha dentro de los próximos 30 días. |
 | `POST /citas/:appointmentId/reprogramar` | Paciente autenticado y CSRF | Revalida la cita y el nuevo horario dentro de una transacción. Conserva médico y especialidad, exige 30 minutos de anticipación, actualiza el horario, registra actor e historial y envía un correo. |
 
-La cancelación manual y la reprogramación se permiten únicamente para citas confirmadas con al menos 24 horas antes de su inicio. La reprogramación mantiene el médico y la especialidad, y valida disponibilidad, duración de 30 minutos, anticipación mínima de 30 minutos y ventana máxima de 30 días dentro de la transacción. Las citas en curso, atendidas, canceladas o fuera del plazo no se pueden cancelar desde el área de paciente. Al cambiar el estado, el cupo deja de estar ocupado y puede volver a ofrecerse.
+El historial presenta fecha, médico, especialidad y estado, sin diagnósticos, recetas ni notas clínicas. La consulta se limita al paciente autenticado y muestra un estado vacío cuando no hay citas anteriores. La cancelación manual y la reprogramación se permiten únicamente para citas confirmadas con al menos 24 horas antes de su inicio. La reprogramación mantiene el médico y la especialidad, y valida disponibilidad, duración de 30 minutos, anticipación mínima de 30 minutos y ventana máxima de 30 días dentro de la transacción. Las citas en curso, atendidas, canceladas o fuera del plazo no se pueden cancelar desde el área de paciente. Al cambiar el estado, el cupo deja de estar ocupado y puede volver a ofrecerse.
 
 ## Recuperación de contraseña — issue #15
 
