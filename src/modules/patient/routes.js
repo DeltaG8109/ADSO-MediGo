@@ -38,7 +38,9 @@ function createPatientRouter({ sequelize = null, models, emailSender = null, wha
         "desvinculado": "Desvinculé tu número de WhatsApp.",
         "consentimiento-requerido": "Acepta el consentimiento e ingresa un número válido con indicativo internacional.",
         "whatsapp-no-configurado": "La verificación por WhatsApp no está configurada en este momento.",
-        "envio-fallido": "No pudimos enviar el código. Revisa la configuración e inténtalo más tarde."
+        "envio-fallido": "No pudimos enviar el código. Revisa la configuración e inténtalo más tarde.",
+        "desvincular-primero": "Desvincula el número actual antes de registrar otro.",
+        "no-encontrado": "No encontramos tu perfil de paciente."
       };
       const statusCode = ["error", "unavailable"].includes(link.status) ? 503
         : link.status === "not_found" ? 404 : 200;
