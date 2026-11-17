@@ -86,6 +86,35 @@ describe("patient appointment list", () => {
     expect(models.Appointment.findAll).not.toHaveBeenCalled();
   });
 
+  test("history returns only appointment details and never clinical information", async () => {
+    const models = modelsFor([{
+      id: 9,
+      startsAt: new Date("2026-11-10T14:00:00.000Z"),
+      endsAt: new Date("2026-11-10T14:30:00.000Z"),
+      status: "ATTENDED",
+      diagnosis: "Información clínica privada",
+      prescription: "Información clínica privada",
+      doctor: { user: { firstName: "Ana", lastName: "Pérez" } },
+      specialty: { name: "Medicina general" }
+    }]);
+
+    const result = await getPatientAppointments({
+      models, userId: 42, filter: "anteriores", now
+    });
+
+    expect(result.status).toBe("ready");
+    expect(result.appointments).toHaveLength(1);
+    expect(result.appointments[0]).toMatchObject({
+      id: 9,
+      doctorName: "Ana Pérez",
+      specialtyName: "Medicina general",
+      status: "Atendida"
+    });
+    expect(result.appointments[0]).not.toHaveProperty("diagnosis");
+    expect(result.appointments[0]).not.toHaveProperty("prescription");
+    expect(models.Appointment.findAll.mock.calls[0][0].where.patientId).toBe(7);
+  });
+
   test("does not expose appointments when no patient profile belongs to the user", async () => {
     const models = modelsFor();
     models.Patient.findOne.mockResolvedValue(null);
