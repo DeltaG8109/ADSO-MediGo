@@ -15,7 +15,7 @@ function setup({ appointmentStatus = "IN_PROGRESS", consultationStatus = "IN_PRO
     Appointment: {
       findOne: jest.fn().mockResolvedValue(doctor ? { id: 21, doctorId: 7, status: appointmentStatus } : null)
     },
-    Consultation: { findOne: jest.fn().mockResolvedValue(doctor ? consultation : null) },
+    Consultation: { update: jest.fn(), findOne: jest.fn().mockResolvedValue(doctor ? consultation : null) },
     ConsultationAddendum: { create: jest.fn().mockResolvedValue({ id: 1 }) }
   };
   const sequelize = {
