@@ -6,6 +6,7 @@ const { validatePasswordChange } = require("../auth/validators/change-password")
 const { getAdminAccount, updateAdminAccount } = require("./services/account");
 const { validateAdminAccount } = require("./validators/account");
 const { getAdminDashboard } = require("./services/dashboard");
+const { getAdminAppointments } = require("./services/appointments");
 const { getAdminPatient, getAdminPatients, updateAdminPatient } = require("./services/patients");
 const { changeAdminAccountStatus, getAccountStatusPreview } = require("./services/account-status");
 const { validateAdminPatient } = require("./validators/patient");
@@ -186,6 +187,23 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
     }
   });
 
+
+  router.get("/administrador/citas", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const result = await getAdminAppointments({
+      models,
+      search: request.query.q,
+      date: request.query.fecha,
+      status: request.query.estado,
+      specialtyId: request.query.especialidad,
+      page: request.query.pagina
+    });
+    const statusCode = result.status === "invalid" || result.status === "invalid_date" ? 422
+      : ["error", "unavailable"].includes(result.status) ? 503 : 200;
+    return response.status(statusCode).render("admin/views/appointments", {
+      title: "Consultar citas", result
+    });
+  });
 
   router.get("/administrador/pacientes", ...requireAdmin, async (request, response) => {
     response.set("Cache-Control", "no-store");

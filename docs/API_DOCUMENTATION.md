@@ -152,6 +152,14 @@ El enlace vence en 24 horas y el token se almacena solo como hash SHA-256. Las r
 
 Los conteos se consultan como agregados, y la vista semanal solo carga fechas y cantidades. No se consultan ni se presentan notas clínicas. El día de reporte se calcula en `America/Bogota`; la página indica estados vacíos, sin configuración y error, y no se almacena en caché. Al iniciar sesión, la cuenta ADMIN llega a este panel.
 
+## Búsqueda administrativa de citas — issue #41
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `GET /administrador/citas` | Administrador autenticado | Busca por paciente o médico y filtra por fecha, estado y especialidad. Presenta resultados paginados con datos administrativos y estados en español. |
+
+La consulta limita los campos a paciente, documento, médico, especialidad, fecha y estado. No carga ni muestra observaciones de consulta, diagnósticos, recetas u otra información clínica.
+
 ## Gestión de pacientes — issue #35
 
 | Método y ruta | Acceso | Comportamiento |
