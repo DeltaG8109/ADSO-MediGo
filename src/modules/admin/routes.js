@@ -9,6 +9,7 @@ const { getAdminDashboard } = require("./services/dashboard");
 const { getAdminAppointments } = require("./services/appointments");
 const { createAdminAppointment, getAdminAppointmentBookingPage } = require("./services/create-appointment");
 const { changeAppointment, getAdminAppointmentChangePage, previewAdminAppointmentChange } = require("./services/manage-appointment");
+const { getNoShowPreview, markAppointmentNoShow } = require("./services/no-show");
 const { getAdminPatient, getAdminPatients, updateAdminPatient } = require("./services/patients");
 const { changeAdminAccountStatus, getAccountStatusPreview } = require("./services/account-status");
 const { validateAdminPatient } = require("./validators/patient");
@@ -329,6 +330,49 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
     return response.status(statusCode).render("admin/views/manage-appointment", {
       title: "Gestionar cita", page, preview: null, result: null,
       message: "No pude reprogramar la cita. El horario pudo ocuparse o la cita dejó de cumplir las condiciones."
+    });
+  });
+
+
+  router.get("/administrador/citas/:appointmentId/inasistencia", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const preview = await getNoShowPreview({ models, appointmentId: request.params.appointmentId });
+    const statusCode = ["error", "unavailable"].includes(preview.status) ? 503
+      : preview.status === "not_found" ? 404
+        : preview.status === "invalid" ? 422
+          : preview.status === "ready" ? 200 : 409;
+    return response.status(statusCode).render("admin/views/no-show-confirmation", {
+      title: "Registrar inasistencia", preview, result: null,
+      message: preview.status === "not_finished"
+        ? "La hora de finalización de la cita todavía no ha transcurrido."
+        : preview.status === "not_confirmed"
+          ? "Solo se puede registrar la inasistencia de una cita confirmada."
+          : null
+    });
+  });
+
+  router.post("/administrador/citas/:appointmentId/inasistencia", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const result = await markAppointmentNoShow({
+      sequelize, models, actorUserId: request.currentUser.id,
+      appointmentId: request.params.appointmentId, confirmed: request.body?.confirmed
+    });
+    if (result.status === "marked") return response.status(200).render("admin/views/no-show-confirmation", {
+      title: "Inasistencia registrada", preview: null, result, message: null
+    });
+    const preview = await getNoShowPreview({ models, appointmentId: request.params.appointmentId });
+    const statusCode = result.status === "not_found" ? 404
+      : result.status === "not_finished" || result.status === "not_confirmed" ? 409
+        : result.status === "invalid" ? 422 : 503;
+    const message = result.status === "not_finished"
+      ? "La hora de finalización de la cita todavía no ha transcurrido."
+      : result.status === "not_confirmed"
+        ? "Solo se puede registrar la inasistencia de una cita confirmada."
+        : result.status === "confirmation_required"
+          ? "Confirma la operación para registrar la inasistencia."
+          : "No pude registrar la inasistencia. Vuelve a revisar la cita.";
+    return response.status(statusCode).render("admin/views/no-show-confirmation", {
+      title: "Registrar inasistencia", preview, result: null, message
     });
   });
 
