@@ -1,0 +1,63 @@
+extends ../../../views/shared/layout.pug
+
+block content
+  .min-h-screen.bg-slate-50.text-slate-800
+    header(class="bg-medigo-navy px-5 py-4 text-white")
+      .mx-auto.flex.max-w-5xl.items-center.justify-between
+        a(href="/paciente", aria-label="MediGo, inicio", class="text-2xl font-extrabold tracking-tight") Medi#[span(class="text-medigo-cyan") Go]
+        nav(aria-label="Navegación de paciente", class="flex gap-4 text-sm")
+          a(href="/paciente", class="text-sky-100 hover:underline") Inicio
+          a(href="/perfil", class="text-sky-100 hover:underline") Mi perfil
+
+    main(class="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6")
+      a(href="/paciente", class="text-sm font-semibold text-medigo-blue hover:underline") ← Volver a mi espacio
+      h1(class="mt-3 text-2xl font-bold text-medigo-navy sm:text-3xl") #{title}
+      p(class="mt-2 text-sm text-slate-600") Verifica tu número para vincularlo a tu cuenta de MediGo.
+      if message
+        p(role="status", class="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900")= message
+
+      if link && link.linked
+        section(class="mt-5 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-7")
+          p(class="text-sm font-semibold text-emerald-800") Número verificado y vinculado
+          p(class="mt-2 text-lg font-bold text-medigo-navy") #{link.phone}
+          if confirmUnlink
+            p(class="mt-4 text-sm text-slate-700") ¿Quieres quitar este número de tu cuenta? Después tendrás que verificarlo de nuevo para volver a usarlo.
+            form(action="/whatsapp/vincular/desvincular", method="post", class="mt-5 flex flex-wrap gap-3")
+              input(type="hidden", name="_csrf", value=csrfToken)
+              button(type="submit", class="rounded-lg bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-800") Sí, desvincular
+              a(href="/whatsapp/vincular", class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50") Volver
+          else
+            a(href="/whatsapp/vincular/desvincular", class="mt-5 inline-flex rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-800 hover:bg-rose-50") Desvincular número
+
+      else if link && link.pending
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7")
+          p(class="text-sm font-semibold text-medigo-navy") Código enviado a #{link.phone}
+          p(class="mt-2 text-sm text-slate-600") El código vence cinco minutos después de enviarlo. Te quedan #{link.attemptsRemaining} intentos.
+          form(action="/whatsapp/vincular/confirmar", method="post", class="mt-5")
+            input(type="hidden", name="_csrf", value=csrfToken)
+            label(for="verification-code", class="mb-2 block text-sm font-semibold text-slate-700") Código de seis dígitos
+            input#verification-code(name="code", type="text", inputmode="numeric", autocomplete="one-time-code", pattern="[0-9]{6}", maxlength="6", required, class="w-full rounded-lg border border-slate-300 px-3 py-2 text-lg tracking-[0.4em]", aria-describedby="code-help")
+            p#code-help(class="mt-2 text-xs text-slate-500") No compartas este código con otras personas.
+            button(type="submit", class="mt-4 rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy") Verificar número
+          form(action="/whatsapp/vincular/codigo", method="post", class="mt-4 border-t border-slate-100 pt-4")
+            input(type="hidden", name="_csrf", value=csrfToken)
+            input(type="hidden", name="phone", value=link.phone)
+            input(type="hidden", name="consent", value="yes")
+            button(type="submit", class="text-sm font-semibold text-medigo-blue hover:underline") Enviar otro código
+
+      else if confirmUnlink
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7")
+          p(class="text-sm text-slate-700") No tienes un número de WhatsApp vinculado.
+          a(href="/whatsapp/vincular", class="mt-4 inline-flex text-sm font-semibold text-medigo-blue hover:underline") Volver
+
+      else
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7")
+          form(action="/whatsapp/vincular/codigo", method="post")
+            input(type="hidden", name="_csrf", value=csrfToken)
+            label(for="whatsapp-phone", class="mb-2 block text-sm font-semibold text-slate-700") Número de WhatsApp con indicativo internacional
+            input#whatsapp-phone(name="phone", type="tel", autocomplete="tel", placeholder="+573001234567", pattern="\\+[1-9][0-9]{7,14}", maxlength="16", required, class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm")
+            p(class="mt-2 text-xs text-slate-500") Ejemplo: +573001234567
+            label(class="mt-5 flex items-start gap-3 text-sm text-slate-700")
+              input(type="checkbox", name="consent", value="yes", required, class="mt-1 rounded border-slate-300 text-medigo-blue focus:ring-medigo-blue")
+              span Acepto que MediGo guarde y verifique este número para vincularlo a mi cuenta.
+            button(type="submit", class="mt-5 rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy") Enviar código de verificación
