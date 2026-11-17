@@ -7,6 +7,7 @@ const { getAdminAccount, updateAdminAccount } = require("./services/account");
 const { validateAdminAccount } = require("./validators/account");
 const { getAdminDashboard } = require("./services/dashboard");
 const { getAdminAppointments } = require("./services/appointments");
+const { createAdminAppointment, getAdminAppointmentBookingPage } = require("./services/create-appointment");
 const { getAdminPatient, getAdminPatients, updateAdminPatient } = require("./services/patients");
 const { changeAdminAccountStatus, getAccountStatusPreview } = require("./services/account-status");
 const { validateAdminPatient } = require("./validators/patient");
@@ -202,6 +203,45 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
       : ["error", "unavailable"].includes(result.status) ? 503 : 200;
     return response.status(statusCode).render("admin/views/appointments", {
       title: "Consultar citas", result
+    });
+  });
+
+  router.get("/administrador/citas/nueva", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const page = await getAdminAppointmentBookingPage({ models, query: request.query || {} });
+    const statusCode = ["error", "unavailable"].includes(page.status) ? 503
+      : ["invalid", "invalid_date", "slot_unavailable"].includes(page.status) ? 422 : 200;
+    return response.status(statusCode).render("admin/views/create-appointment", {
+      title: "Crear cita", page, result: null, message: null
+    });
+  });
+
+  router.post("/administrador/citas/nueva/confirmar", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const result = await createAdminAppointment({
+      sequelize, models, actorUserId: request.currentUser.id,
+      patientId: request.body?.patientId, specialtyId: request.body?.specialtyId,
+      doctorId: request.body?.doctorId, date: request.body?.date, time: request.body?.time, emailSender
+    });
+    if (result.status === "booked") return response.status(200).render("admin/views/create-appointment", {
+      title: "Cita confirmada", page: { status: "ready" }, result, message: null
+    });
+    const page = await getAdminAppointmentBookingPage({
+      models, query: {
+        patientId: request.body?.patientId, specialtyId: request.body?.specialtyId,
+        doctorId: request.body?.doctorId, date: request.body?.date
+      }
+    });
+    const statusCode = ["invalid", "invalid_date"].includes(result.status) ? 422
+      : result.status === "patient_not_found" || result.status === "not_found" ? 404
+        : result.status === "patient_has_upcoming" || result.status === "slot_unavailable" ? 409 : 503;
+    const message = result.status === "patient_has_upcoming"
+      ? "Este paciente ya tiene una cita futura confirmada. No reservé otra."
+      : result.status === "slot_unavailable"
+        ? "Ese horario acaba de ocuparse. Selecciona una opción disponible."
+        : "No pude confirmar la cita. Revisa los datos e inténtalo de nuevo.";
+    return response.status(statusCode).render("admin/views/create-appointment", {
+      title: "Crear cita", page, result, message
     });
   });
 
