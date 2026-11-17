@@ -8,6 +8,8 @@ El diseño físico de registro está en [USER_REGISTRATION_SCHEMA.md](USER_REGIS
 La historia #22 incorpora dos migraciones: `202611100002-add-patient-profile-email-change` añade `users.pending_email` y el propósito `EMAIL_CHANGE` a `account_tokens`; `202611100003-add-patient-city` añade la ciudad opcional a `patients`. El correo vigente no se reemplaza hasta que el paciente confirme el enlace. La migración `202611100004-create-doctor-appointments` crea las tablas base de especialidades, médicos y citas siguiendo el diseño físico aprobado. La migración `202611120001-create-doctor-weekly-schedules` crea `doctor_weekly_schedules` y `doctor_weekly_schedule_blocks` para administrar versiones semanales de disponibilidad sin borrar horarios anteriores. El detalle de columnas y reglas está en [DOCTOR_WEEKLY_SCHEDULE_SCHEMA.md](DOCTOR_WEEKLY_SCHEDULE_SCHEMA.md). La migración `202611160001-create-doctor-schedule-exceptions` crea `doctor_schedule_exceptions` para bloqueos puntuales de disponibilidad. El detalle del diseño aprobado está en [DOCTOR_SCHEDULE_EXCEPTIONS_SCHEMA.md](DOCTOR_SCHEDULE_EXCEPTIONS_SCHEMA.md).
 
 
+La migración `202611170001-create-consultations` crea el registro único de cada consulta médica. La migración `202611170002-create-consultation-addenda` conserva las aclaraciones posteriores como filas independientes, con médico autor y fecha, sin modificar las observaciones originales. Ambas se ejecutan con `npm run db:migrate`.
+
 ## Ejecutar la migración
 
 1. Configura `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` en `.env`.
