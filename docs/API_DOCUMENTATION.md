@@ -65,6 +65,21 @@ El historial presenta fecha, médico, especialidad y estado, sin diagnósticos, 
 
 El token aleatorio se guarda solo como hash SHA-256, vence en 30 minutos y se invalida tras el cambio. Un cambio exitoso también invalida otros enlaces de recuperación pendientes de la cuenta. Los formularios mantienen protección CSRF y no se almacenan en caché.
 
+## Vincular WhatsApp — issue #24
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `GET /whatsapp/vincular` | Paciente autenticado | Muestra el estado de vinculación o el formulario de consentimiento y número internacional. |
+| `POST /whatsapp/vincular/codigo` | Paciente autenticado y CSRF | Envía un código de seis dígitos con una plantilla aprobada de Meta WhatsApp Cloud API. El código vence en cinco minutos y se permiten cinco intentos. |
+| `POST /whatsapp/vincular/confirmar` | Paciente autenticado y CSRF | Verifica el código, confirma el número y guarda la hora de verificación. |
+| `GET /whatsapp/vincular/desvincular` | Paciente autenticado | Presenta la confirmación para desvincular. |
+| `POST /whatsapp/vincular/desvincular` | Paciente autenticado y CSRF | Quita el número vinculado después de la confirmación. |
+
+El número se guarda en formato internacional y es único por paciente. Se persiste únicamente un HMAC SHA-256 del código; el secreto `WHATSAPP_VERIFICATION_SECRET` debe configurarse en el entorno. El envío usa `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFICATION_TEMPLATE`, `WHATSAPP_VERIFICATION_TEMPLATE_LANGUAGE` y `WHATSAPP_GRAPH_API_VERSION`. La plantilla debe estar aprobada en Meta e incluir el código como una variable del cuerpo. Si faltan credenciales o falla Meta, no se informa que el código fue enviado.
+
+No se envían mensajes proactivos. Esta pantalla solicita el envío como parte de una acción iniciada por el paciente. La recepción y gestión de conversaciones corresponde a la issue #25.
+
+Referencias: [WhatsApp Business Platform de Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/overview/) y [plantillas de mensajes](https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates/).
 ## Cambio de contraseña del paciente — issue #23
 
 | Método y ruta | Acceso | Comportamiento |
