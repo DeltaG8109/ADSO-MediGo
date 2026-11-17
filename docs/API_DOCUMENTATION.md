@@ -164,8 +164,8 @@ La consulta limita los campos a paciente, documento, médico, especialidad, fech
 
 | Método y ruta | Acceso | Comportamiento |
 |---|---|---|
-| \`GET /administrador/citas/nueva\` | Administrador autenticado | Permite elegir paciente activo, especialidad, médico, fecha y horario disponible. |
-| \`POST /administrador/citas/nueva/confirmar\` | Administrador autenticado y CSRF | Revalida disponibilidad y la cita futura del paciente dentro de una transacción. Guarda quién creó la cita, registra la acción y envía confirmación por correo. |
+| `GET /administrador/citas/nueva` | Administrador autenticado | Permite elegir paciente activo, especialidad, médico, fecha y horario disponible. |
+| `POST /administrador/citas/nueva/confirmar` | Administrador autenticado y CSRF | Revalida disponibilidad y la cita futura del paciente dentro de una transacción. Guarda quién creó la cita, registra la acción y envía confirmación por correo. |
 
 La reserva conserva las reglas compartidas: citas de 30 minutos, mínimo 30 minutos de anticipación, ventana de 30 días y máximo una cita futura confirmada por paciente. Los errores de horario ocupado no crean la cita. La notificación ocurre después de guardar, y sus fallos quedan registrados.
 
