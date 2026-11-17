@@ -3,6 +3,7 @@ const {
   createAdminAppointment,
   getAdminAppointmentBookingPage
 } = require("../src/modules/admin/services/create-appointment");
+const { createAdminRouter } = require("../src/modules/admin/routes");
 
 const now = new Date("2026-11-16T12:00:00.000Z");
 const doctor = {
