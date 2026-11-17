@@ -1,5 +1,3 @@
-const { Op } = require("sequelize");
-
 const TIME_ZONE = "America/Bogota";
 
 function plain(record) {
@@ -96,7 +94,7 @@ async function markAppointmentNoShow({
         afterData: { status: "NO_SHOW", markedAt: now },
         createdAt: now
       }, { transaction });
-      return { status: "marked", appointment: displayAppointment({ ...item, status: "NO_SHOW" }) };
+      return { status: "marked", markedAt: now, appointment: displayAppointment({ ...item, status: "NO_SHOW" }) };
     });
   } catch {
     return { status: "error" };
