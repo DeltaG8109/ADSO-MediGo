@@ -36,6 +36,7 @@ function appointmentIncludes(models) {
     });
   }
   if (models.Specialty) include.push({ model: models.Specialty, as: "specialty", attributes: ["name"] });
+  if (models.Consultation) include.push({ model: models.Consultation, as: "consultation", attributes: ["status", "startedAt"] });
   return include;
 }
 
@@ -46,6 +47,8 @@ function presentAppointment(record, now) {
   const specialty = plain(appointment.specialty);
   const startsAt = new Date(appointment.startsAt);
   const endsAt = new Date(appointment.endsAt);
+  const consultation = plain(appointment.consultation);
+  const consultationStartedAt = consultation?.startedAt ? new Date(consultation.startedAt) : null;
   const canStart = appointment.status === "CONFIRMED"
     && Number.isFinite(startsAt.getTime())
     && Number.isFinite(endsAt.getTime())
@@ -64,6 +67,10 @@ function presentAppointment(record, now) {
     date: new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "long" }).format(startsAt),
     time: new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hour12: true }).format(startsAt),
     status: appointment.status,
+    consultationStartedAt: consultationStartedAt && Number.isFinite(consultationStartedAt.getTime()) ? consultationStartedAt : null,
+    consultationStartedAtLabel: consultationStartedAt && Number.isFinite(consultationStartedAt.getTime())
+      ? new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", dateStyle: "long", timeStyle: "short" }).format(consultationStartedAt)
+      : null,
     canStart
   };
 }
