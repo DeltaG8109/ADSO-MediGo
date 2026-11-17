@@ -51,6 +51,7 @@ block content
                   th(class="px-4 py-3") Médico
                   th(class="px-4 py-3") Especialidad
                   th(class="px-4 py-3") Estado
+                  th(class="px-4 py-3") Acción
               tbody
                 each appointment in result.appointments
                   tr(class="border-t border-slate-100")
@@ -60,6 +61,8 @@ block content
                     td(class="px-4 py-3")= appointment.doctorName
                     td(class="px-4 py-3")= appointment.specialtyName
                     td(class="px-4 py-3")= appointment.status
+                    td(class="px-4 py-3")
+                      a(class="font-semibold text-medigo-blue hover:underline", href="/administrador/citas/" + appointment.id + "/gestionar") Administrar
         else
           p(role="status", class="rounded-xl bg-sky-50 p-4 text-sm text-slate-700") No encontramos citas con esos filtros.
         if result.page > 1 || result.page < result.pageCount
