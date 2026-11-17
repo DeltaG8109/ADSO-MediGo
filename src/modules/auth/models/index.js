@@ -154,6 +154,16 @@ function initializeAuthModels(sequelize) {
     cancellationReason: { type: DataTypes.STRING(255), allowNull: true, field: "cancellation_reason" }
   }, { tableName: "appointments", underscored: true });
 
+  const Consultation = sequelize.define("Consultation", {
+    id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+    appointmentId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, unique: true, field: "appointment_id" },
+    doctorId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: "doctor_id" },
+    status: { type: DataTypes.ENUM("IN_PROGRESS", "COMPLETED"), allowNull: false, defaultValue: "IN_PROGRESS" },
+    notes: { type: DataTypes.TEXT, allowNull: true },
+    startedAt: { type: DataTypes.DATE(3), allowNull: false, field: "started_at" },
+    completedAt: { type: DataTypes.DATE(3), allowNull: true, field: "completed_at" }
+  }, { tableName: "consultations", underscored: true });
+
   User.hasOne(Patient, { foreignKey: "userId", as: "patient" });
   Patient.belongsTo(User, { foreignKey: "userId", as: "user" });
   User.hasOne(Doctor, { foreignKey: "userId", as: "doctor" });
@@ -172,12 +182,16 @@ function initializeAuthModels(sequelize) {
   Appointment.belongsTo(Patient, { foreignKey: "patientId", as: "patient" });
   Appointment.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
   Appointment.belongsTo(Specialty, { foreignKey: "specialtyId", as: "specialty" });
+  Appointment.hasOne(Consultation, { foreignKey: "appointmentId", as: "consultation" });
+  Consultation.belongsTo(Appointment, { foreignKey: "appointmentId", as: "appointment" });
+  Doctor.hasMany(Consultation, { foreignKey: "doctorId", as: "consultations" });
+  Consultation.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
   User.hasMany(AccountToken, { foreignKey: "userId", as: "accountTokens" });
   AccountToken.belongsTo(User, { foreignKey: "userId", as: "user" });
   AccountToken.hasOne(NotificationOutbox, { foreignKey: "accountTokenId", as: "notification" });
   NotificationOutbox.belongsTo(AccountToken, { foreignKey: "accountTokenId", as: "accountToken" });
 
-  return { User, Patient, Doctor, Specialty, Appointment, DoctorWeeklySchedule, DoctorWeeklyScheduleBlock, DoctorScheduleException, AccountToken, NotificationOutbox, AuditLog };
+  return { User, Patient, Doctor, Specialty, Appointment, Consultation, DoctorWeeklySchedule, DoctorWeeklyScheduleBlock, DoctorScheduleException, AccountToken, NotificationOutbox, AuditLog };
 }
 
 module.exports = { initializeAuthModels };

@@ -91,6 +91,14 @@ La jornada se calcula según `America/Bogota`. Si no hay citas se muestra un est
 
 Las fechas se filtran y presentan en `America/Bogota`. El acceso a iniciar atención se muestra solo para citas confirmadas dentro de su bloque programado. No hay acciones para cancelar o reprogramar citas.
 
+## Iniciar consulta médica — issue #29
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `POST /medico/consultas/iniciar/:appointmentId` | Médico autenticado y CSRF | Inicia la atención solo si la cita está confirmada, pertenece al médico de la sesión y el momento está dentro del bloque programado. Cambia la cita a `IN_PROGRESS` y guarda la hora de inicio en `consultations.started_at`. |
+
+La operación bloquea la cita y actualiza el estado y el registro de consulta en una transacción. Una cita no se puede iniciar antes de la hora programada, al terminar el bloque, dos veces ni desde otro médico. La hora se conserva en UTC y se presenta en `America/Bogota`.
+
 ## Pacientes asociados al médico — issue #28
 
 | Método y ruta | Acceso | Comportamiento |
