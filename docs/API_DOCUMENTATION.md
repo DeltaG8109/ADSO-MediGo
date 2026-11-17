@@ -91,6 +91,15 @@ La jornada se calcula según `America/Bogota`. Si no hay citas se muestra un est
 
 Las fechas se filtran y presentan en `America/Bogota`. El acceso a iniciar atención se muestra solo para citas confirmadas dentro de su bloque programado. No hay acciones para cancelar o reprogramar citas.
 
+## Observaciones y aclaraciones de consulta — issue #30
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `POST /medico/consultas/:appointmentId/observaciones` | Médico asignado, sesión y CSRF | Guarda o actualiza observaciones opcionales mientras la cita y la consulta están en curso. El texto admite hasta 10.000 caracteres. |
+| `POST /medico/consultas/:appointmentId/aclaraciones` | Médico asignado, sesión y CSRF | Agrega una aclaración independiente después de finalizar la consulta. Cada registro conserva médico autor, contenido y fecha; no se sobrescriben aclaraciones anteriores. |
+
+El detalle `GET /medico/citas/:appointmentId` muestra las observaciones originales y, después de finalizar, las deja de solo lectura y presenta las aclaraciones por fecha. Los datos clínicos solo se cargan para el médico asignado. Los instantes se conservan en UTC y las fechas se presentan en `America/Bogota`.
+
 ## Iniciar consulta médica — issue #29
 
 | Método y ruta | Acceso | Comportamiento |
