@@ -1,0 +1,92 @@
+extends ../../../views/shared/layout.pug
+
+block content
+  main(class="min-h-screen bg-slate-100 px-4 py-7 text-slate-800")
+    section(class="mx-auto max-w-5xl")
+      a(class="text-sm font-semibold text-medigo-blue hover:underline", href="/administrador/citas") ← Volver a citas
+      header(class="mt-4")
+        p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") MediGo · Administración
+        h1(class="mt-1 text-2xl font-bold text-medigo-navy sm:text-3xl") Gestionar cita
+        p(class="mt-1 text-sm text-slate-600") Revisa los datos y confirma el cambio antes de aplicarlo.
+      if message
+        p(class="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert")= message
+      if result && (result.status === "cancelled" || result.status === "rescheduled")
+        section(class="mt-5 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm", role="status")
+          if result.status === "cancelled"
+            p(class="text-sm font-semibold uppercase tracking-wide text-emerald-700") Cita cancelada
+            h2(class="mt-1 text-xl font-bold text-medigo-navy") Avisé al paciente del cambio
+            p(class="mt-2 text-sm text-slate-700") #{result.appointment.date} · #{result.appointment.time}
+          else
+            p(class="text-sm font-semibold uppercase tracking-wide text-emerald-700") Cita reprogramada
+            h2(class="mt-1 text-xl font-bold text-medigo-navy") Nueva fecha: #{result.appointment.date} · #{result.appointment.time}
+            p(class="mt-2 text-sm text-slate-700") Fecha anterior: #{result.previous.date} · #{result.previous.time}
+          if result.notificationStatus === "failed"
+            p(class="mt-3 text-sm text-amber-800") Guardé el cambio, pero no pude enviar el correo al paciente.
+          else if result.notificationStatus === "sent"
+            p(class="mt-3 text-sm text-emerald-800") Envié un correo al paciente.
+          a(class="mt-4 inline-flex rounded-lg bg-medigo-blue px-4 py-2 text-sm font-semibold text-white", href="/administrador/citas") Volver a citas
+      else if page.status === "error" || page.status === "unavailable"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No pude cargar esta cita. Inténtalo más tarde.
+      else if page.status === "invalid"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") El número de cita no es válido.
+      else if page.status === "not_found"
+        p(class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900", role="alert") No encontré la cita solicitada.
+      else if page.status === "not_changeable"
+        p(class="mt-5 rounded-xl bg-sky-50 p-4 text-sm text-sky-900", role="status") Solo puedes cambiar citas confirmadas cuando faltan al menos 24 horas para su inicio.
+      else if preview
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
+          h2(class="text-lg font-bold text-medigo-navy") Confirma que quieres continuar
+          p(class="mt-2 text-sm text-slate-700") Paciente: #{preview.appointment.patientName}
+          p(class="mt-1 text-sm text-slate-700") Médico: #{preview.appointment.doctorName} · #{preview.appointment.specialtyName}
+          if preview.action === "cancel"
+            p(class="mt-1 text-sm text-slate-700") Se cancelará: #{preview.appointment.date} · #{preview.appointment.time}
+            form(action="/administrador/citas/" + preview.appointment.id + "/cancelar/confirmar", method="post", class="mt-4")
+              input(type="hidden", name="_csrf", value=csrfToken)
+              input(type="hidden", name="reason", value=preview.reason)
+              button(class="rounded-lg bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white", type="submit") Confirmar cancelación
+          else
+            p(class="mt-1 text-sm text-slate-700") Nuevo horario: #{preview.slot.label}
+            form(action="/administrador/citas/" + preview.appointment.id + "/reprogramar/confirmar", method="post", class="mt-4")
+              input(type="hidden", name="_csrf", value=csrfToken)
+              input(type="hidden", name="reason", value=preview.reason)
+              input(type="hidden", name="date", value=page.date)
+              input(type="hidden", name="time", value=preview.slot.time)
+              button(class="rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white", type="submit") Confirmar reprogramación
+      else if page.appointment && page.status === "ready"
+        section(class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
+          h2(class="text-lg font-bold text-medigo-navy") Datos de la cita
+          p(class="mt-2 text-sm text-slate-700") Paciente: #{page.appointment.patientName}
+          p(class="mt-1 text-sm text-slate-700") Médico: #{page.appointment.doctorName} · #{page.appointment.specialtyName}
+          p(class="mt-1 text-sm text-slate-700") Fecha: #{page.appointment.date} · #{page.appointment.time}
+          p(class="mt-1 text-sm text-slate-700") Estado: Confirmada
+        section(class="mt-5 grid gap-5 lg:grid-cols-2")
+          form(action="/administrador/citas/" + page.appointment.id + "/cancelar/vista-previa", method="post", class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
+            h2(class="text-lg font-bold text-medigo-navy") Cancelar cita
+            p(class="mt-1 text-sm text-slate-600") La cancelación requiere un motivo y quedará registrada.
+            input(type="hidden", name="_csrf", value=csrfToken)
+            label(class="mt-4 block text-sm font-semibold", for="cancelReason") Motivo
+            textarea#cancelReason(class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2", name="reason", minlength="3", maxlength="255", required, rows="3")
+            button(class="mt-3 rounded-lg bg-rose-700 px-4 py-2.5 text-sm font-semibold text-white", type="submit") Revisar cancelación
+          form(action="/administrador/citas/" + page.appointment.id + "/reprogramar/vista-previa", method="post", class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm")
+            h2(class="text-lg font-bold text-medigo-navy") Reprogramar cita
+            p(class="mt-1 text-sm text-slate-600") Se conserva el mismo médico. El nuevo horario depende de su disponibilidad.
+            input(type="hidden", name="_csrf", value=csrfToken)
+            label(class="mt-4 block text-sm font-semibold", for="date") Nueva fecha
+            input#date(class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2", type="date", name="date", value=page.date, required)
+            label(class="mt-3 block text-sm font-semibold", for="rescheduleReason") Motivo
+            textarea#rescheduleReason(class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2", name="reason", minlength="3", maxlength="255", required, rows="2")
+            if page.slots.length
+              label(class="mt-3 block text-sm font-semibold", for="time") Horario disponible
+              select#time(class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2", name="time", required)
+                option(value="") Selecciona un horario
+                each slot in page.slots
+                  option(value=slot.time)= slot.label
+            else
+              input(type="hidden", name="time", value="")
+              p(class="mt-3 text-sm text-slate-600") Elige una fecha para consultar los horarios disponibles.
+            button(class="mt-3 rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white", type="submit", disabled=!page.slots.length) Revisar reprogramación
+        form(action="/administrador/citas/" + page.appointment.id + "/gestionar", method="get", class="mt-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4")
+          div
+            label(class="block text-sm font-semibold", for="availabilityDate") Consultar disponibilidad para otra fecha
+            input#availabilityDate(class="mt-1 rounded-lg border border-slate-300 px-3 py-2", type="date", name="fecha", value=page.date, required)
+          button(class="rounded-lg border border-slate-300 px-4 py-2 font-semibold", type="submit") Buscar horarios

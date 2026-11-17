@@ -169,6 +169,18 @@ La consulta limita los campos a paciente, documento, médico, especialidad, fech
 
 La reserva conserva las reglas compartidas: citas de 30 minutos, mínimo 30 minutos de anticipación, ventana de 30 días y máximo una cita futura confirmada por paciente. Los errores de horario ocupado no crean la cita. La notificación ocurre después de guardar, y sus fallos quedan registrados.
 
+## Cancelar o reprogramar citas desde administración — issue #43
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `GET /administrador/citas/:appointmentId/gestionar` | Administrador autenticado | Muestra la cita y permite consultar la disponibilidad del mismo médico. |
+| `POST /administrador/citas/:appointmentId/cancelar/vista-previa` | Administrador autenticado y CSRF | Valida el motivo y presenta una confirmación antes de cancelar. |
+| `POST /administrador/citas/:appointmentId/cancelar/confirmar` | Administrador autenticado y CSRF | Cancela la cita confirmada si faltan al menos 24 horas; guarda motivo, actor e historial y avisa al paciente. |
+| `POST /administrador/citas/:appointmentId/reprogramar/vista-previa` | Administrador autenticado y CSRF | Comprueba el horario disponible y muestra la nueva fecha antes de confirmar. |
+| `POST /administrador/citas/:appointmentId/reprogramar/confirmar` | Administrador autenticado y CSRF | Revalida dentro de una transacción, conserva médico y especialidad, registra el actor y el motivo y avisa al paciente. |
+
+Los cambios manuales solo aplican a citas confirmadas con 24 horas o más de anticipación. La reprogramación respeta los bloques y excepciones del mismo médico, requiere 30 minutos de anticipación y se limita a los próximos 30 días. Si el horario deja de estar disponible, se conserva la cita original. Las fechas se muestran en `America/Bogota`; los instantes se guardan en UTC. La cancelación por desactivar una cuenta o cambiar una agenda sigue las reglas de esas acciones administrativas.
+
 ## Gestión de pacientes — issue #35
 
 | Método y ruta | Acceso | Comportamiento |
