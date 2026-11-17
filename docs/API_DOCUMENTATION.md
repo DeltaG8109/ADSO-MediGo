@@ -181,6 +181,15 @@ La reserva conserva las reglas compartidas: citas de 30 minutos, mínimo 30 minu
 
 Los cambios manuales solo aplican a citas confirmadas con 24 horas o más de anticipación. La reprogramación respeta los bloques y excepciones del mismo médico, requiere 30 minutos de anticipación y se limita a los próximos 30 días. Si el horario deja de estar disponible, se conserva la cita original. Las fechas se muestran en `America/Bogota`; los instantes se guardan en UTC. La cancelación por desactivar una cuenta o cambiar una agenda sigue las reglas de esas acciones administrativas.
 
+## Registrar inasistencia desde administración — issue #44
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `GET /administrador/citas/:appointmentId/inasistencia` | Administrador autenticado | Revisa el estado y horario de la cita, y pide confirmación cuando ya terminó. |
+| `POST /administrador/citas/:appointmentId/inasistencia` | Administrador autenticado y CSRF | Revalida la cita dentro de una transacción y la cambia de `CONFIRMED` a `NO_SHOW` solo si su hora de finalización ya pasó. Registra actor, momento y cambio en el historial. |
+
+No se puede registrar la inasistencia antes del fin programado ni si la cita dejó de estar confirmada. La confirmación se vuelve a validar al guardar para evitar cambios simultáneos.
+
 ## Gestión de pacientes — issue #35
 
 | Método y ruta | Acceso | Comportamiento |
