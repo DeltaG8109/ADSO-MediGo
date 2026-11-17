@@ -108,6 +108,12 @@ El detalle `GET /medico/citas/:appointmentId` muestra las observaciones original
 
 La operación bloquea la cita y actualiza el estado y el registro de consulta en una transacción. Una cita no se puede iniciar antes de la hora programada, al terminar el bloque, dos veces ni desde otro médico. La hora se conserva en UTC y se presenta en `America/Bogota`.
 
+## Finalizar consulta — issue #31
+
+| Método y ruta | Acceso | Comportamiento |
+|---|---|---|
+| `POST /medico/consultas/finalizar/:appointmentId` | Médico asignado, sesión y CSRF | Finaliza una consulta en curso sin exigir observaciones. En una transacción, cambia la cita a `ATTENDED`, la consulta a `COMPLETED` y registra la hora de finalización. Una consulta finalizada no se puede finalizar de nuevo ni editar en su registro original. |
+
 ## Pacientes asociados al médico — issue #28
 
 | Método y ruta | Acceso | Comportamiento |
