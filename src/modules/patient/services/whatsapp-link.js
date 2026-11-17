@@ -7,8 +7,8 @@ const MAX_CODE_ATTEMPTS = 5;
 
 function normalizeWhatsAppPhone(value) {
   if (typeof value !== "string") return null;
-  const normalized = value.trim().replace(/[\\s().-]/g, "");
-  return /^\\+[1-9]\\d{7,14}$/.test(normalized) ? normalized : null;
+  const normalized = value.trim().replace(/[\s().-]/g, "");
+  return /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : null;
 }
 
 function codeDigest(code, secret) {
@@ -111,7 +111,7 @@ async function verifyPatientWhatsAppCode({
   sequelize, models, userId, code, secret = process.env.WHATSAPP_VERIFICATION_SECRET, now = new Date()
 }) {
   const normalizedCode = typeof code === "string" ? code.trim() : "";
-  if (!/^\\d{6}$/.test(normalizedCode)) return { status: "invalid_format" };
+  if (!/^\d{6}$/.test(normalizedCode)) return { status: "invalid_format" };
   if (!secret) return { status: "unavailable" };
   if (!sequelize?.transaction || !models?.Patient?.findOne) return { status: "unavailable" };
 
