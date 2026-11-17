@@ -101,7 +101,7 @@ async function getAdminAppointments({ models, search = "", date = "", status = "
     if (selectedDate) where.startsAt = appointmentDateRange(selectedDate);
     if (selectedSpecialty) where.specialtyId = selectedSpecialty;
     if (normalizedSearch) {
-      const pattern = "%" + normalizedSearch.replace(/[\\%_]/g, "\\\\\\$&") + "%";
+      const pattern = "%" + normalizedSearch.replace(/[\\%_]/g, "\\      const pattern = "%" + normalizedSearch.replace(/[\\%_]/g, "\\\\\\$&") + "%";") + "%";
       where[Op.or] = [
         { "$patient.user.firstName$": { [Op.like]: pattern } },
         { "$patient.user.lastName$": { [Op.like]: pattern } },
