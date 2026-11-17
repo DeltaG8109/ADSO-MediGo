@@ -11,7 +11,7 @@ function inputText(value, maxLength, required = false) {
 }
 
 async function withAuthorizedConsultation({ sequelize, models, userId, appointmentId, action }) {
-  if (!/^[1-9]\\d*$/.test(String(appointmentId || ""))) return { status: "invalid" };
+  if (!/^[1-9]\d*$/.test(String(appointmentId || ""))) return { status: "invalid" };
   if (!sequelize?.transaction || !models?.Doctor?.findOne || !models?.Appointment?.findOne
     || !models?.Consultation?.findOne) return { status: "unavailable" };
 
