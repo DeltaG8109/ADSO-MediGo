@@ -22,7 +22,7 @@ function modelsFor({ upcoming = null, slots = [] } = {}) {
     },
     User: { findByPk: jest.fn().mockResolvedValue({
       id: 22, role: "PATIENT", status: "ACTIVE", emailVerifiedAt: now,
-      firstName: "Laura", email: "laura@example.com"
+      firstName: "Laura", lastName: "Paz", email: "laura@example.com"
     }) },
     Specialty: { findAll: jest.fn().mockResolvedValue([{ id: 3, name: "Medicina general" }]) },
     Doctor: { findByPk: jest.fn().mockResolvedValue(doctor), findAll: jest.fn().mockResolvedValue([doctor]) },
@@ -119,7 +119,7 @@ describe("administrator appointment creation", () => {
     expect(sequelize.transaction).not.toHaveBeenCalled();
   });
 
-  test("does not create a cita when the email cannot be sent", async () => {
+  test("keeps the appointment saved when the email cannot be sent", async () => {
     const models = modelsFor();
     const { sequelize } = transactionHarness();
     const result = await createAdminAppointment({
@@ -134,5 +134,20 @@ describe("administrator appointment creation", () => {
       action: "ADMIN_APPOINTMENT_BOOKING_EMAIL_FAILED",
       afterData: { status: "failed" }
     }));
+  });
+});
+
+
+describe("administrator appointment creation access", () => {
+  test("requires an administrator to confirm an appointment", () => {
+    const router = createAdminRouter({ models: { User: { findByPk: jest.fn() } } });
+    const route = router.stack.find((layer) => layer.route?.path === "/administrador/citas/nueva/confirmar");
+    expect(route).toBeDefined();
+    const requireAdminRole = route.route.stack[1].handle;
+    const response = { status: jest.fn().mockReturnThis(), render: jest.fn() };
+    requireAdminRole({ currentUser: { role: "DOCTOR" } }, response, () => {
+      throw new Error("Un médico no debe continuar.");
+    });
+    expect(response.status).toHaveBeenCalledWith(403);
   });
 });
