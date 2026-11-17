@@ -21,7 +21,7 @@ function normalizeSearch(value) {
 
 function validDate(value) {
   const date = String(value || "");
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
   const parsed = new Date(date + "T00:00:00.000Z");
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 }
@@ -88,7 +88,7 @@ async function getAdminAppointments({ models, search = "", date = "", status = "
     selectedDate, selectedStatus, selectedSpecialty, page: currentPage, pageCount: 1, total: 0
   };
   if ((selectedStatus && !ALLOWED_STATUSES.has(selectedStatus))
-    || (selectedSpecialty && !/^\\d+$/.test(selectedSpecialty))) {
+    || (selectedSpecialty && !/^\d+$/.test(selectedSpecialty))) {
     return { ...empty, status: "invalid" };
   }
   if (selectedDate && !validDate(selectedDate)) return { ...empty, status: "invalid_date" };
@@ -101,7 +101,7 @@ async function getAdminAppointments({ models, search = "", date = "", status = "
     if (selectedDate) where.startsAt = appointmentDateRange(selectedDate);
     if (selectedSpecialty) where.specialtyId = selectedSpecialty;
     if (normalizedSearch) {
-      const pattern = "%" + normalizedSearch.replace(/[\\\\%_]/g, "\\\\$&") + "%";
+      const pattern = "%" + normalizedSearch.replace(/[\\%_]/g, "\\\\\\$&") + "%";
       where[Op.or] = [
         { "$patient.user.firstName$": { [Op.like]: pattern } },
         { "$patient.user.lastName$": { [Op.like]: pattern } },
