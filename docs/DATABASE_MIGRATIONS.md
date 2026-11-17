@@ -10,6 +10,8 @@ La historia #22 incorpora dos migraciones: `202611100002-add-patient-profile-ema
 
 La migración `202611170001-create-consultations` crea el registro único de cada consulta médica. La migración `202611170002-create-consultation-addenda` conserva las aclaraciones posteriores como filas independientes, con médico autor y fecha, sin modificar las observaciones originales. Ambas se ejecutan con `npm run db:migrate`.
 
+La migración `202611170003-add-patient-whatsapp-verification` añade a `patients` el número internacional único, consentimiento, fecha de verificación, hash y vencimiento del código y contador de intentos. La pantalla requiere configurar el acceso a Meta Cloud API y un secreto del servidor en `.env`; los valores de referencia están en `.env.example`.
+
 ## Ejecutar la migración
 
 1. Configura `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD` en `.env`.

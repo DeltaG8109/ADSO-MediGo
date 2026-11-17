@@ -9,7 +9,7 @@ block content
           a(href="/paciente", aria-current="page", class="whitespace-nowrap rounded-lg bg-medigo-blue px-3 py-2 font-semibold") Inicio
           a(href="/mis-citas", class="whitespace-nowrap rounded-lg px-3 py-2 hover:bg-white/10") Mis citas
           a(href="/perfil", class="whitespace-nowrap rounded-lg px-3 py-2 hover:bg-white/10") Mi perfil
-          a(href="/whatsapp", class="whitespace-nowrap rounded-lg px-3 py-2 hover:bg-white/10") WhatsApp
+          a(href="/whatsapp/vincular", class="whitespace-nowrap rounded-lg px-3 py-2 hover:bg-white/10") WhatsApp
         form(action="/cerrar-sesion", method="post", class="hidden md:mt-auto md:block md:w-full")
           input(type="hidden", name="_csrf", value=csrfToken)
           button(type="submit", class="mt-8 w-full rounded-lg px-3 py-2 text-left text-sm text-sky-100 hover:bg-white/10") Cerrar sesión
@@ -64,8 +64,8 @@ block content
           div
             span(aria-hidden="true", class="text-3xl") ☎
             h2#whatsapp-title(class="mt-3 text-xl font-bold text-medigo-navy") ¿Necesitas ayuda?
-            p(class="mt-2 text-sm text-slate-700") Chatea con nuestro asistente en WhatsApp.
-          a(href="/whatsapp", class="mt-5 inline-flex w-fit items-center rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy") Abrir WhatsApp ↗
+            p(class="mt-2 text-sm text-slate-700") Verifica y vincula tu número para usar MediGo por WhatsApp.
+          a(href="/whatsapp", class="mt-5 inline-flex w-fit items-center rounded-lg bg-medigo-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-medigo-navy") Vincular WhatsApp
 
       form(action="/cerrar-sesion", method="post", class="mt-6 md:hidden")
         input(type="hidden", name="_csrf", value=csrfToken)

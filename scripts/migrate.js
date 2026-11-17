@@ -31,6 +31,10 @@ const migrations = [
   {
     name: "202611170002-create-consultation-addenda",
     migration: require("../src/database/migrations/202611170002-create-consultation-addenda")
+  },
+  {
+    name: "202611170003-add-patient-whatsapp-verification",
+    migration: require("../src/database/migrations/202611170003-add-patient-whatsapp-verification")
   }
 ];
 

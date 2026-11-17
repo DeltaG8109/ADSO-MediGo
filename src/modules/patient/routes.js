@@ -1,4 +1,11 @@
 const { Router } = require("express");
+const { createMetaWhatsAppCloudApi } = require("../whatsapp/meta-cloud-api");
+const {
+  getPatientWhatsAppLink,
+  requestPatientWhatsAppVerification,
+  unlinkPatientWhatsApp,
+  verifyPatientWhatsAppCode
+} = require("./services/whatsapp-link");
 const { requireAuthenticatedUser, requireRole } = require("../auth/middleware/authorization");
 const { validatePatientProfile } = require("./validators/profile");
 const { validatePatientPasswordChange } = require("./validators/change-password");
@@ -10,9 +17,108 @@ const { getPatientAppointments } = require("./services/my-appointments");
 const { cancelPatientAppointment, getPatientAppointmentCancellation } = require("./services/cancel-appointment");
 const { getPatientReschedulePage, reschedulePatientAppointment } = require("./services/reschedule-appointment");
 
-function createPatientRouter({ sequelize = null, models, emailSender = null } = {}) {
+function createPatientRouter({ sequelize = null, models, emailSender = null, whatsappSender = null } = {}) {
   const router = Router();
+  const metaWhatsAppSender = whatsappSender || createMetaWhatsAppCloudApi();
 
+
+  router.get(
+    "/whatsapp/vincular",
+    requireAuthenticatedUser({ models }), requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const link = await getPatientWhatsAppLink({ models, userId: request.currentUser.id });
+      const messages = {
+        "codigo-enviado": "Envié un código de seis dígitos al número indicado. Vence en cinco minutos.",
+        "whatsapp-vinculado": "Tu número de WhatsApp quedó verificado y vinculado.",
+        "codigo-invalido": "El código no coincide. Revisa el mensaje e inténtalo de nuevo.",
+        "codigo-vencido": "El código venció. Solicita uno nuevo para continuar.",
+        "intentos-agotados": "Agotaste los cinco intentos. Solicita un código nuevo.",
+        "numero-en-uso": "Ese número ya está vinculado a otra cuenta.",
+        "desvinculado": "Desvinculé tu número de WhatsApp.",
+        "consentimiento-requerido": "Acepta el consentimiento e ingresa un número válido con indicativo internacional.",
+        "whatsapp-no-configurado": "La verificación por WhatsApp no está configurada en este momento.",
+        "envio-fallido": "No pudimos enviar el código. Revisa la configuración e inténtalo más tarde.",
+        "desvincular-primero": "Desvincula el número actual antes de registrar otro.",
+        "no-encontrado": "No encontramos tu perfil de paciente."
+      };
+      const statusCode = ["error", "unavailable"].includes(link.status) ? 503
+        : link.status === "not_found" ? 404 : 200;
+      return response.status(statusCode).render("patient/views/whatsapp-link", {
+        title: "Vincular WhatsApp", link: link.status === "ready" ? link : null,
+        message: messages[request.query.mensaje] || (link.status === "error" || link.status === "unavailable"
+          ? "No fue posible cargar la vinculación de WhatsApp."
+          : link.status === "not_found" ? "No encontramos tu perfil de paciente." : null),
+        confirmUnlink: false
+      });
+    }
+  );
+
+  router.post(
+    "/whatsapp/vincular/codigo",
+    requireAuthenticatedUser({ models }), requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await requestPatientWhatsAppVerification({
+        sequelize, models, userId: request.currentUser.id,
+        phone: request.body?.phone, consent: request.body?.consent === "yes",
+        sender: metaWhatsAppSender
+      });
+      const messages = {
+        code_sent: "codigo-enviado", already_linked: "whatsapp-vinculado",
+        already_used: "numero-en-uso", unlink_first: "desvincular-primero",
+        invalid: "consentimiento-requerido", unavailable: "whatsapp-no-configurado",
+        delivery_failed: "envio-fallido", error: "envio-fallido", not_found: "whatsapp-no-configurado"
+      };
+      return response.redirect(303, "/whatsapp/vincular?mensaje=" + (messages[result.status] || "envio-fallido"));
+    }
+  );
+
+  router.post(
+    "/whatsapp/vincular/confirmar",
+    requireAuthenticatedUser({ models }), requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await verifyPatientWhatsAppCode({
+        sequelize, models, userId: request.currentUser.id, code: request.body?.code
+      });
+      const messages = {
+        verified: "whatsapp-vinculado", invalid_format: "codigo-invalido",
+        invalid_code: "codigo-invalido", expired: "codigo-vencido",
+        attempts_exhausted: "intentos-agotados", not_found: "codigo-vencido",
+        unavailable: "whatsapp-no-configurado", error: "codigo-invalido"
+      };
+      return response.redirect(303, "/whatsapp/vincular?mensaje=" + (messages[result.status] || "codigo-invalido"));
+    }
+  );
+
+  router.get(
+    "/whatsapp/vincular/desvincular",
+    requireAuthenticatedUser({ models }), requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const link = await getPatientWhatsAppLink({ models, userId: request.currentUser.id });
+      return response.status(link.status === "ready" ? 200 : 503).render("patient/views/whatsapp-link", {
+        title: "Desvincular WhatsApp", link: link.status === "ready" ? link : null,
+        message: link.status === "ready" && !link.linked ? "No tienes un número vinculado." : null,
+        confirmUnlink: link.status === "ready" && link.linked
+      });
+    }
+  );
+
+  router.post(
+    "/whatsapp/vincular/desvincular",
+    requireAuthenticatedUser({ models }), requireRole("PATIENT"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await unlinkPatientWhatsApp({ sequelize, models, userId: request.currentUser.id });
+      const message = result.status === "unlinked" ? "desvinculado"
+        : result.status === "not_linked" ? "codigo-vencido"
+          : result.status === "unavailable" || result.status === "error" ? "whatsapp-no-configurado"
+            : "whatsapp-no-configurado";
+      return response.redirect(303, "/whatsapp/vincular?mensaje=" + message);
+    }
+  );
 
   router.get(
     "/citas/reservar",

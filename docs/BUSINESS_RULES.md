@@ -46,7 +46,7 @@
 
 ## WhatsApp
 
-- Vinculación requiere consentimiento y código de seis dígitos, válido cinco minutos, máximo cinco intentos.
+- Vinculación requiere consentimiento y código de seis dígitos, válido cinco minutos, máximo cinco intentos. Se utiliza una plantilla aprobada de Meta WhatsApp Cloud API y el código se conserva como HMAC SHA-256 con un secreto del servidor.
 - Número verificado único por cuenta. Conversación inactiva expira tras 15 minutos.
 - Solo pacientes vinculados y verificados; las operaciones se vuelven a validar en servidor y siguen las reglas web.
 - No enviar mensajes proactivos por WhatsApp; responder en el chat a una operación iniciada ahí. Usar proveedor oficial.
