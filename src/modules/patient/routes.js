@@ -169,6 +169,16 @@ function createPatientRouter({ sequelize = null, models, emailSender = null } = 
   );
 
   router.get(
+    "/historial",
+    requireAuthenticatedUser({ models }),
+    requireRole("PATIENT"),
+    (request, response) => {
+      response.set("Cache-Control", "no-store");
+      return response.redirect(303, "/mis-citas?filtro=anteriores");
+    }
+  );
+
+  router.get(
     "/mis-citas",
     requireAuthenticatedUser({ models }),
     requireRole("PATIENT"),
