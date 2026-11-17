@@ -94,7 +94,13 @@ async function markAppointmentNoShow({
         afterData: { status: "NO_SHOW", markedAt: now },
         createdAt: now
       }, { transaction });
-      return { status: "marked", markedAt: now, appointment: displayAppointment({ ...item, status: "NO_SHOW" }) };
+      return {
+        status: "marked", markedAt: now,
+        markedAtLabel: new Intl.DateTimeFormat("es-CO", {
+          timeZone: TIME_ZONE, dateStyle: "long", timeStyle: "short"
+        }).format(now),
+        appointment: displayAppointment({ ...item, status: "NO_SHOW" })
+      };
     });
   } catch {
     return { status: "error" };
