@@ -8,6 +8,7 @@ const { validateAppointmentFilters } = require("./validators/appointments");
 const { getDoctorPatient, getDoctorPatients } = require("./services/patients");
 const { getDoctorProfile, updateDoctorProfile } = require("./services/profile");
 const { getDoctorSchedule } = require("./services/schedule");
+const { startDoctorConsultation } = require("./services/start-consultation");
 const { validateDoctorProfile } = require("./validators/profile");
 
 function createDoctorRouter({ sequelize = null, models = null } = {}) {
@@ -186,7 +187,9 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
       });
       const statusCode = result.status === "ready" ? 200
         : result.status === "not_found" ? 404 : 503;
-      const message = result.status === "not_found"
+      const message = request.query.mensaje === "consulta-iniciada"
+        ? "Iniciaste la atención. El registro quedó guardado."
+        : result.status === "not_found"
         ? "No encontramos esta cita asignada."
         : result.status === "unavailable" || result.status === "error"
           ? "No fue posible cargar la cita en este momento."
@@ -195,6 +198,46 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
         title: result.status === "ready" ? "Detalle de cita" : "Cita no disponible",
         appointment: result.appointment || null,
         message
+      });
+    }
+  );
+
+
+  router.post(
+    "/medico/consultas/iniciar/:appointmentId",
+    requireAuthenticatedUser({ models }),
+    requireRole("DOCTOR"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await startDoctorConsultation({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId
+      });
+      if (result.status === "started") {
+        return response.redirect(303, "/medico/citas/" + result.appointmentId + "?mensaje=consulta-iniciada");
+      }
+
+      const detail = result.status === "not_found"
+        ? { status: "not_found", appointment: null }
+        : await getDoctorAppointment({
+          models, userId: request.currentUser.id, appointmentId: request.params.appointmentId
+        });
+      const messages = {
+        not_found: "No encontramos esta cita asignada.",
+        invalid: "El número de cita no es válido.",
+        invalid_state: "Solo puedes iniciar una cita que siga confirmada.",
+        outside_window: "La atención solo puede iniciarse desde la hora programada y antes de que termine el bloque.",
+        already_started: "Esta atención ya fue iniciada.",
+        unavailable: "El inicio de atención no está disponible en este momento.",
+        error: "No fue posible iniciar la atención. Inténtalo de nuevo."
+      };
+      const statusCode = result.status === "not_found" ? 404
+        : ["invalid", "invalid_state", "outside_window", "already_started"].includes(result.status) ? 409
+          : result.status === "invalid" ? 422 : 503;
+      return response.status(statusCode).render("doctor/views/appointment-detail", {
+        title: detail.appointment ? "Detalle de cita" : "Cita no disponible",
+        appointment: detail.appointment || null,
+        message: messages[result.status] || messages.error
       });
     }
   );
