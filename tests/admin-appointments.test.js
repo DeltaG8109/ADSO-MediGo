@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const { getAdminAppointments, presentAppointment, validDate } = require("../src/modules/admin/services/appointments");
+const { createAdminRouter } = require("../src/modules/admin/routes");
 
 describe("administrator appointment search", () => {
   function appointmentModels(rows = []) {
@@ -61,5 +62,23 @@ describe("administrator appointment search", () => {
   test("presents an empty result when the filters find no appointments", async () => {
     const result = await getAdminAppointments({ models: appointmentModels() });
     expect(result).toMatchObject({ status: "ready", total: 0, pageCount: 1, appointments: [] });
+  });
+});
+
+
+describe("administrator appointment route access", () => {
+  test("keeps appointment search restricted to administrators", () => {
+    const router = createAdminRouter({ models: { User: { findByPk: jest.fn() } } });
+    const route = router.stack.find((layer) => layer.route?.path === "/administrador/citas");
+    expect(route).toBeDefined();
+
+    const requireAdminRole = route.route.stack[1].handle;
+    const response = { status: jest.fn().mockReturnThis(), render: jest.fn() };
+    requireAdminRole({ currentUser: { role: "PATIENT" } }, response, () => {
+      throw new Error("Una persona paciente no debe continuar.");
+    });
+
+    expect(response.status).toHaveBeenCalledWith(403);
+    expect(response.render).toHaveBeenCalledWith("auth/views/access-denied", expect.any(Object));
   });
 });
