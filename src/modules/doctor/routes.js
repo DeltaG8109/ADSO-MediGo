@@ -232,8 +232,8 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
         error: "No fue posible iniciar la atención. Inténtalo de nuevo."
       };
       const statusCode = result.status === "not_found" ? 404
-        : ["invalid", "invalid_state", "outside_window", "already_started"].includes(result.status) ? 409
-          : result.status === "invalid" ? 422 : 503;
+        : result.status === "invalid" ? 422
+          : ["invalid_state", "outside_window", "already_started"].includes(result.status) ? 409 : 503;
       return response.status(statusCode).render("doctor/views/appointment-detail", {
         title: detail.appointment ? "Detalle de cita" : "Cita no disponible",
         appointment: detail.appointment || null,
