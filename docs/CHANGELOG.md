@@ -1,3 +1,9 @@
+## 2026-11-17 — Finalizar consulta médica (US-DOC-06)
+
+- Añadí la acción para finalizar una consulta desde el detalle de la cita, aunque no tenga observaciones.
+- Guardé el estado de cita y consulta junto con la hora de finalización en una transacción.
+- Evité finalizar dos veces o alterar la consulta si su estado ya cambió; añadí pruebas y documenté la ruta.
+
 ## 2026-11-17 — Observaciones y aclaraciones de consulta (US-DOC-05)
 
 - Permití guardar y editar observaciones mientras la consulta está en curso.

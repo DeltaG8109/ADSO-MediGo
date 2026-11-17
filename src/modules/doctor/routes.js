@@ -9,6 +9,7 @@ const { getDoctorPatient, getDoctorPatients } = require("./services/patients");
 const { getDoctorProfile, updateDoctorProfile } = require("./services/profile");
 const { getDoctorSchedule } = require("./services/schedule");
 const { startDoctorConsultation } = require("./services/start-consultation");
+const { finishDoctorConsultation } = require("./services/finish-consultation");
 const { appendConsultationAddendum, saveConsultationNotes } = require("./services/consultation-notes");
 const { validateDoctorProfile } = require("./validators/profile");
 
@@ -190,6 +191,10 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
         : result.status === "not_found" ? 404 : 503;
       const messages = {
         "consulta-iniciada": "Iniciaste la atención. El registro quedó guardado.",
+        "consulta-finalizada": "Finalizaste la atención y las observaciones originales quedaron protegidas.",
+        "consulta-id-invalido": "El número de cita no es válido.",
+        "consulta-estado-invalido": "Solo puedes finalizar una consulta que esté en curso.",
+        "consulta-ya-finalizada": "Esta consulta ya fue finalizada.",
         "observaciones-guardadas": "Guardé las observaciones de la consulta.",
         "observaciones-invalidas": "Las observaciones no pueden superar los 10.000 caracteres.",
         "observaciones-inmutables": "Las observaciones originales ya no se pueden modificar.",
@@ -250,6 +255,25 @@ function createDoctorRouter({ sequelize = null, models = null } = {}) {
         appointment: detail.appointment || null,
         message: messages[result.status] || messages.error
       });
+    }
+  );
+
+  router.post(
+    "/medico/consultas/finalizar/:appointmentId",
+    requireAuthenticatedUser({ models }), requireRole("DOCTOR"),
+    async (request, response) => {
+      response.set("Cache-Control", "no-store");
+      const result = await finishDoctorConsultation({
+        sequelize, models, userId: request.currentUser.id,
+        appointmentId: request.params.appointmentId
+      });
+      const key = {
+        finished: "consulta-finalizada", invalid: "consulta-id-invalido",
+        not_found: "consulta-no-encontrada", invalid_state: "consulta-estado-invalido",
+        already_completed: "consulta-ya-finalizada", unavailable: "consulta-no-disponible",
+        error: "consulta-error"
+      }[result.status] || "consulta-error";
+      return response.redirect(303, "/medico/citas/" + encodeURIComponent(request.params.appointmentId) + "?mensaje=" + key);
     }
   );
 
