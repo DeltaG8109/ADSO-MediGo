@@ -26,7 +26,7 @@ async function getPatientWhatsAppLink({ models, userId }) {
   try {
     const patient = await models.Patient.findOne({
       where: { userId },
-      attributes: ["whatsappPhone", "whatsappConsentAt", "whatsappVerifiedAt", "whatsappVerificationExpiresAt", "whatsappVerificationAttempts"]
+      attributes: ["whatsappPhone", "whatsappConsentAt", "whatsappVerifiedAt", "whatsappVerificationCodeHash", "whatsappVerificationExpiresAt", "whatsappVerificationAttempts"]
     });
     if (!patient) return { status: "not_found" };
     const linked = Boolean(patient.whatsappPhone && patient.whatsappVerifiedAt);
