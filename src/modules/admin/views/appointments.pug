@@ -14,6 +14,7 @@ block content
         p(class="text-sm font-semibold uppercase tracking-wide text-medigo-blue") MediGo · Administración
         h1(class="mt-1 text-2xl font-bold text-medigo-navy sm:text-3xl") Consultar citas
         p(class="mt-1 text-sm text-slate-600") Busca y revisa citas sin acceder a información clínica.
+        a(class="mt-3 inline-flex rounded-lg bg-medigo-blue px-4 py-2 text-sm font-semibold text-white", href="/administrador/citas/nueva") Crear cita
       if result.status === "error" || result.status === "unavailable"
         p(role="alert", class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900") No pudimos cargar las citas. Inténtalo de nuevo más tarde.
       else if result.status === "invalid" || result.status === "invalid_date"
