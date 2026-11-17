@@ -63,6 +63,8 @@ block content
                     td(class="px-4 py-3")= appointment.status
                     td(class="px-4 py-3")
                       a(class="font-semibold text-medigo-blue hover:underline", href="/administrador/citas/" + appointment.id + "/gestionar") Administrar
+                      if appointment.status === "Confirmada"
+                        a(class="ml-3 font-semibold text-rose-700 hover:underline", href="/administrador/citas/" + appointment.id + "/inasistencia") Registrar inasistencia
         else
           p(role="status", class="rounded-xl bg-sky-50 p-4 text-sm text-slate-700") No encontramos citas con esos filtros.
         if result.page > 1 || result.page < result.pageCount
