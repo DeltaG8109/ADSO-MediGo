@@ -265,7 +265,7 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
     const preview = await previewAdminAppointmentChange({
       models, appointmentId: request.params.appointmentId, action: "cancel", reason: request.body?.reason
     });
-    const page = preview.appointment ? preview : await getAdminAppointmentChangePage({
+    const page = preview.appointment ? { ...preview, date: String(request.body?.date || "") } : await getAdminAppointmentChangePage({
       models, appointmentId: request.params.appointmentId
     });
     const statusCode = preview.status === "ready" ? 200
