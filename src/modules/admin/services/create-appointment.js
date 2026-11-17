@@ -118,7 +118,7 @@ async function createAdminAppointment({
       }));
       if (!patient) return { status: "patient_not_found" };
       const patientUser = plain(await models.User.findByPk(patient.userId, {
-        attributes: ["id", "firstName", "email", "role", "status", "emailVerifiedAt"],
+        attributes: ["id", "firstName", "lastName", "email", "role", "status", "emailVerifiedAt"],
         transaction, lock: transaction.LOCK.UPDATE
       }));
       if (!patientUser || patientUser.role !== "PATIENT" || patientUser.status !== "ACTIVE"
