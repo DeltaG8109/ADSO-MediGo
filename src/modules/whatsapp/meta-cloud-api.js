@@ -24,7 +24,7 @@ function createMetaWhatsAppCloudApi({
           },
           body: JSON.stringify({
             messaging_product: "whatsapp",
-            to: String(to).replace(/^\\+/, ""),
+            to: String(to).replace(/^\+/, ""),
             type: "template",
             template: {
               name: templateName,
