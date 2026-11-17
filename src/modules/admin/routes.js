@@ -8,6 +8,7 @@ const { validateAdminAccount } = require("./validators/account");
 const { getAdminDashboard } = require("./services/dashboard");
 const { getAdminAppointments } = require("./services/appointments");
 const { createAdminAppointment, getAdminAppointmentBookingPage } = require("./services/create-appointment");
+const { changeAppointment, getAdminAppointmentChangePage, previewAdminAppointmentChange } = require("./services/manage-appointment");
 const { getAdminPatient, getAdminPatients, updateAdminPatient } = require("./services/patients");
 const { changeAdminAccountStatus, getAccountStatusPreview } = require("./services/account-status");
 const { validateAdminPatient } = require("./validators/patient");
@@ -242,6 +243,92 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
         : "No pude confirmar la cita. Revisa los datos e inténtalo de nuevo.";
     return response.status(statusCode).render("admin/views/create-appointment", {
       title: "Crear cita", page, result, message
+    });
+  });
+
+
+  router.get("/administrador/citas/:appointmentId/gestionar", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const page = await getAdminAppointmentChangePage({
+      models, appointmentId: request.params.appointmentId, date: request.query.fecha
+    });
+    const statusCode = ["error", "unavailable"].includes(page.status) ? 503
+      : ["invalid", "invalid_date"].includes(page.status) ? 422
+        : page.status === "not_found" ? 404 : 200;
+    return response.status(statusCode).render("admin/views/manage-appointment", {
+      title: "Gestionar cita", page, preview: null, result: null, message: null
+    });
+  });
+
+  router.post("/administrador/citas/:appointmentId/cancelar/vista-previa", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const preview = await previewAdminAppointmentChange({
+      models, appointmentId: request.params.appointmentId, action: "cancel", reason: request.body?.reason
+    });
+    const page = preview.appointment ? preview : await getAdminAppointmentChangePage({
+      models, appointmentId: request.params.appointmentId
+    });
+    const statusCode = preview.status === "ready" ? 200
+      : ["error", "unavailable"].includes(preview.status) ? 503
+        : preview.status === "not_found" ? 404 : 422;
+    return response.status(statusCode).render("admin/views/manage-appointment", {
+      title: "Gestionar cita", page, preview: preview.status === "ready" ? preview : null,
+      result: null, message: preview.status === "ready" ? null : "No pude preparar el cambio. Revisa el estado de la cita y el motivo."
+    });
+  });
+
+  router.post("/administrador/citas/:appointmentId/cancelar/confirmar", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const result = await changeAppointment({
+      sequelize, models, actorUserId: request.currentUser.id, appointmentId: request.params.appointmentId,
+      action: "cancel", reason: request.body?.reason, emailSender
+    });
+    if (result.status === "cancelled") return response.status(200).render("admin/views/manage-appointment", {
+      title: "Cita cancelada", page: { status: "changed" }, preview: null, result, message: null
+    });
+    const page = await getAdminAppointmentChangePage({ models, appointmentId: request.params.appointmentId });
+    const statusCode = result.status === "not_found" ? 404
+      : result.status === "unavailable" || result.status === "error" ? 503 : 409;
+    return response.status(statusCode).render("admin/views/manage-appointment", {
+      title: "Gestionar cita", page, preview: null, result: null,
+      message: "No pude cancelar la cita. Puede que ya no cumpla las condiciones para cambiarla."
+    });
+  });
+
+  router.post("/administrador/citas/:appointmentId/reprogramar/vista-previa", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const preview = await previewAdminAppointmentChange({
+      models, appointmentId: request.params.appointmentId, action: "reschedule",
+      reason: request.body?.reason, date: request.body?.date, time: request.body?.time
+    });
+    const page = preview.appointment ? preview : await getAdminAppointmentChangePage({
+      models, appointmentId: request.params.appointmentId, date: request.body?.date
+    });
+    const statusCode = preview.status === "ready" ? 200
+      : ["error", "unavailable"].includes(preview.status) ? 503
+        : preview.status === "not_found" ? 404 : 422;
+    return response.status(statusCode).render("admin/views/manage-appointment", {
+      title: "Gestionar cita", page, preview: preview.status === "ready" ? preview : null,
+      result: null, message: preview.status === "ready" ? null : "Ese horario ya no está disponible o los datos no son válidos."
+    });
+  });
+
+  router.post("/administrador/citas/:appointmentId/reprogramar/confirmar", ...requireAdmin, async (request, response) => {
+    response.set("Cache-Control", "no-store");
+    const result = await changeAppointment({
+      sequelize, models, actorUserId: request.currentUser.id, appointmentId: request.params.appointmentId,
+      action: "reschedule", reason: request.body?.reason, date: request.body?.date,
+      time: request.body?.time, emailSender
+    });
+    if (result.status === "rescheduled") return response.status(200).render("admin/views/manage-appointment", {
+      title: "Cita reprogramada", page: { status: "changed" }, preview: null, result, message: null
+    });
+    const page = await getAdminAppointmentChangePage({ models, appointmentId: request.params.appointmentId });
+    const statusCode = result.status === "not_found" ? 404
+      : result.status === "unavailable" || result.status === "error" ? 503 : 409;
+    return response.status(statusCode).render("admin/views/manage-appointment", {
+      title: "Gestionar cita", page, preview: null, result: null,
+      message: "No pude reprogramar la cita. El horario pudo ocuparse o la cita dejó de cumplir las condiciones."
     });
   });
 
