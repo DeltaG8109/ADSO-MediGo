@@ -363,7 +363,7 @@ function createAdminRouter({ sequelize = null, models = null, emailSender = null
     const preview = await getNoShowPreview({ models, appointmentId: request.params.appointmentId });
     const statusCode = result.status === "not_found" ? 404
       : result.status === "not_finished" || result.status === "not_confirmed" ? 409
-        : result.status === "invalid" ? 422 : 503;
+        : result.status === "invalid" || result.status === "confirmation_required" ? 422 : 503;
     const message = result.status === "not_finished"
       ? "La hora de finalización de la cita todavía no ha transcurrido."
       : result.status === "not_confirmed"
